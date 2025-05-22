@@ -8,7 +8,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name = trim($_POST['name']);
     $email = trim($_POST['email']);
     
-    // Default admin password in plain text (choose a strong one)
+    // Default admin password 
     $defaultAdminPassword = 'admin123';
 
     // Determine account type and password
@@ -20,7 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
     }
 
-    $code = rand(100000, 999999); // 6-digit numeric code for email verification
+    $code = rand(100000, 999999); 
 
     // Check if email already exists
     $check = $conn->prepare("SELECT id FROM users WHERE email = ?");
@@ -48,10 +48,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 ?>
 
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register - Alon at Araw</title>
-    <link rel="stylesheet" href="../assets/styles.css"> 
 </head>
 <body>
     <h2>Register</h2>

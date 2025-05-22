@@ -14,6 +14,8 @@ if (isset($_SESSION['user_id'])) {
 require '../config/db.php';
 
 $message = "";
+$emailError = false;
+$passwordError = false;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim($_POST['email']);
@@ -23,52 +25,90 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt->execute([$email]);
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    if ($user && password_verify($password, $user['password'])) {
-        if ($user['email_verified'] == 0) {
-                $message = "Please verify your email first. <a href='verify-code.php'>Click here to verify</a>";
-            }
-            else {
+    if ($user) {
+        if (!password_verify($password, $user['password'])) {
+            $passwordError = true;
+        } elseif ($user['email_verified'] == 0) {
+            $emailError = true;
+            $message = "Please verify your email first. <a href='verify-code.php'>Click here to verify</a>";
+        } else {
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['name'] = $user['name'];
             $_SESSION['type'] = $user['account_type'];
 
-            if ($user['account_type'] === 'admin') {
-                header("Location: ../dashboard/admin/dashboard.php");
-            } else {
-                header("Location: ../dashboard/customer/dashboard.php");
-            }
-            exit;
+            echo "<script>
+                localStorage.setItem('loginSuccess', '1');
+                localStorage.setItem('accountType', '" . $user['account_type'] . "');
+            </script>";
         }
     } else {
-        $message = "Invalid login credentials.";
+        $emailError = true;
+        $passwordError = true;
     }
 }
 ?>
 
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Alon at Araw</title>
-    <link rel="stylesheet" href="../assets/styles.css"> 
+    <link rel="stylesheet" href="../assets/styles/login.css">
+    <link rel="stylesheet" href="../assets/global.css">
+    <link rel="icon" type="image/png" href="../assets/images/logo/logo.png"/>
 </head>
 <body>
+  <div class="login-container">
     <h2>Login</h2>
 
-    <?php if (!empty($message)) : ?>
-        <p><?= htmlspecialchars($message) ?></p>
-    <?php endif; ?>
-
     <form method="POST" action="">
-        <label for="email">Email</label><br>
-        <input type="email" name="email" id="email" required><br><br>
+        <div class="input-container">
+            <label for="email">Email</label>
+            <input type="email" name="email" id="email" placeholder="example@gmail.com" required class="<?= $emailError ? 'error' : '' ?>">
+            <?php if ($emailError && empty($message)): ?><div class="error-text">Email not found</div><?php endif; ?>
+        </div>
 
-        <label for="password">Password</label><br>
-        <input type="password" name="password" id="password" required><br><br>
+        <div class="input-container">
+            <label for="password">Password</label>
+            <input type="password" name="password" id="password" required class="<?= $passwordError ? 'error' : '' ?>">
+            <?php if ($passwordError): ?><div class="error-text">Incorrect password</div><?php endif; ?>
+        </div>
 
         <button type="submit">Login</button>
     </form>
 
-    <p>Don’t have an account? <a href="register.php">Register here</a></p>
-    <p><a href="forgot-password.php">Forgot Password?</a></p>
+    <div class="links">
+        <p>Don’t have an account? <a href="register.php">Register here</a></p>
+        <p><a href="forgot-password.php">Forgot Password?</a></p>
+    </div>
+</div>
+
+<div class="toast" id="successToast">Login successful! Redirecting...</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function () {
+        if (localStorage.getItem('loginSuccess') === '1') {
+            $('#successToast').fadeIn(300);
+
+            setTimeout(function () {
+                $('#successToast').fadeOut(400);
+            }, 2000);
+
+            setTimeout(function () {
+                let type = localStorage.getItem('accountType');
+                if (type === 'admin') {
+                    window.location.href = '../dashboard/admin/dashboard.php';
+                } else {
+                    window.location.href = '../dashboard/customer/dashboard.php';
+                }
+                localStorage.removeItem('loginSuccess');
+                localStorage.removeItem('accountType');
+            }, 3000);
+        }
+    });
+</script>
 </body>
 </html>
+
