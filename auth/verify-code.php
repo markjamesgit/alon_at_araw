@@ -26,26 +26,94 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Verify Email - Alon at Araw</title>
+    <link rel="stylesheet" href="../assets/styles/login.css" />
+    <link rel="stylesheet" href="../assets/global.css" />
+    <link rel="icon" type="image/png" href="../assets/images/logo/logo.png" />
 </head>
 <body>
-     <h2>Email Verification</h2>
+    <div class="login-container">
+        <h2>Email Verification</h2>
+
+        <form method="POST" action="" onsubmit="return combineCodeInputs()">
+    <div class="input-container">
+        <label for="email">Email Address</label>
+        <input
+            type="email"
+            name="email"
+            id="email"
+            required
+            value="<?= htmlspecialchars($_GET['email'] ?? '') ?>"
+        />
+    </div>
+
+    <div class="input-container">
+        <label>Verification Code</label>
+        <div id="code-inputs" style="display:flex; gap:8px;">
+            <input type="text" maxlength="1" class="code-input" pattern="\d" inputmode="numeric" required />
+            <input type="text" maxlength="1" class="code-input" pattern="\d" inputmode="numeric" required />
+            <input type="text" maxlength="1" class="code-input" pattern="\d" inputmode="numeric" required />
+            <input type="text" maxlength="1" class="code-input" pattern="\d" inputmode="numeric" required />
+            <input type="text" maxlength="1" class="code-input" pattern="\d" inputmode="numeric" required />
+            <input type="text" maxlength="1" class="code-input" pattern="\d" inputmode="numeric" required />
+        </div>
+        <!-- Hidden input to hold combined code -->
+        <input type="hidden" name="code" id="combined-code" />
+    </div>
 
     <?php if (!empty($message)) : ?>
-        <p><?= htmlspecialchars($message) ?></p>
-    <?php endif; ?>
+            <p class="error-text"><?= htmlspecialchars($message) ?></p>
+        <?php endif; ?>
 
-    <form method="POST" action="">
-        <label for="email">Email Address</label><br>
-        <input type="email" name="email" id="email" required value="<?= htmlspecialchars($_GET['email'] ?? '') ?>">
-        <br><br>
+    <button type="submit">Verify</button>
+</form>
 
-        <label for="code">Verification Code</label><br>
-        <input type="text" name="code" id="code" maxlength="6" required><br><br>
+        <div class="links">
+            <p>
+                Go back to 
+                <a href="register.php">Registration</a>
+            </p>
+        </div>
 
-        <button type="submit">Verify</button>
-    </form>
+<script>
+    // Automatically focus next input when typing, backspace support
+    const inputs = document.querySelectorAll('.code-input');
+
+    inputs.forEach((input, i) => {
+        input.addEventListener('input', () => {
+            if (input.value.length === 1 && i < inputs.length - 1) {
+                inputs[i + 1].focus();
+            }
+        });
+
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Backspace' && input.value === '' && i > 0) {
+                inputs[i - 1].focus();
+            }
+        });
+
+        // Only allow digits
+        input.addEventListener('keypress', (e) => {
+            if (!/\d/.test(e.key)) {
+                e.preventDefault();
+            }
+        });
+    });
+
+    // On submit, combine inputs into hidden field
+    function combineCodeInputs() {
+        let code = '';
+        inputs.forEach(input => code += input.value);
+        if (code.length !== inputs.length) {
+            alert('Please enter all 6 digits of the verification code.');
+            return false;
+        }
+        document.getElementById('combined-code').value = code;
+        return true; // allow form submit
+    }
+</script>
+    </div>
 </body>
 </html>

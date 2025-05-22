@@ -68,8 +68,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <form method="POST" action="">
             <div class="input-container">
-                <label for="name">Full Name</label>
-                <input type="text" name="name" id="name" placeholder="Juan Dela Cruz" required />
+                <label for="name">Username</label>
+                <input type="text" name="name" id="name" placeholder="Juander" required />
             </div>
 
             <div class="input-container">
