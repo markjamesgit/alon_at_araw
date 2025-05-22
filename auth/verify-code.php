@@ -14,8 +14,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($user) {
         $stmt = $conn->prepare("UPDATE users SET email_verified = 1, verification_code = NULL WHERE id = ?");
         $stmt->execute([$user['id']]);
-        // Redirect to login page after successful verification
-        header("Location: login.php");
+        echo "<script>
+            localStorage.setItem('verificationSuccess', '1');
+            window.location.href = 'login.php';
+        </script>";
         exit();
     } else {
         $message = "Invalid verification code or email.";
@@ -37,38 +39,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="login-container">
         <h2>Email Verification</h2>
 
-        <form method="POST" action="" onsubmit="return combineCodeInputs()">
-    <div class="input-container">
-        <label for="email">Email Address</label>
-        <input
-            type="email"
-            name="email"
-            id="email"
-            required
-            value="<?= htmlspecialchars($_GET['email'] ?? '') ?>"
-        />
-    </div>
+        <form method="POST" action="">
+            <div class="input-container">
+                <label for="email">Email Address</label>
+                <input
+                    type="email"
+                    name="email"
+                    id="email"
+                    required
+                    value="<?= htmlspecialchars($_GET['email'] ?? '') ?>"
+                />
+            </div>
 
-    <div class="input-container">
-        <label>Verification Code</label>
-        <div id="code-inputs" style="display:flex; gap:8px;">
-            <input type="text" maxlength="1" class="code-input" pattern="\d" inputmode="numeric" required />
-            <input type="text" maxlength="1" class="code-input" pattern="\d" inputmode="numeric" required />
-            <input type="text" maxlength="1" class="code-input" pattern="\d" inputmode="numeric" required />
-            <input type="text" maxlength="1" class="code-input" pattern="\d" inputmode="numeric" required />
-            <input type="text" maxlength="1" class="code-input" pattern="\d" inputmode="numeric" required />
-            <input type="text" maxlength="1" class="code-input" pattern="\d" inputmode="numeric" required />
-        </div>
-        <!-- Hidden input to hold combined code -->
-        <input type="hidden" name="code" id="combined-code" />
-    </div>
+            <div class="input-container">
+                <label>Verification Code</label>
+                <div id="code-inputs" style="display:flex; gap:8px;">
+                    <input type="text" maxlength="1" class="code-input" pattern="\d" inputmode="numeric" required />
+                    <input type="text" maxlength="1" class="code-input" pattern="\d" inputmode="numeric" required />
+                    <input type="text" maxlength="1" class="code-input" pattern="\d" inputmode="numeric" required />
+                    <input type="text" maxlength="1" class="code-input" pattern="\d" inputmode="numeric" required />
+                    <input type="text" maxlength="1" class="code-input" pattern="\d" inputmode="numeric" required />
+                    <input type="text" maxlength="1" class="code-input" pattern="\d" inputmode="numeric" required />
+                </div>
+                <!-- Hidden input to hold combined code -->
+                <input type="hidden" name="code" id="combined-code" />
+            </div>
 
-    <?php if (!empty($message)) : ?>
-            <p class="error-text"><?= htmlspecialchars($message) ?></p>
-        <?php endif; ?>
+            <?php if (!empty($message)) : ?>
+                <p class="error-text"><?= htmlspecialchars($message) ?></p>
+            <?php endif; ?>
 
-    <button type="submit">Verify</button>
-</form>
+            <button type="submit">Verify</button>
+        </form>
 
         <div class="links">
             <p>
@@ -77,43 +79,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </p>
         </div>
 
-<script>
-    // Automatically focus next input when typing, backspace support
-    const inputs = document.querySelectorAll('.code-input');
-
-    inputs.forEach((input, i) => {
-        input.addEventListener('input', () => {
-            if (input.value.length === 1 && i < inputs.length - 1) {
-                inputs[i + 1].focus();
-            }
-        });
-
-        input.addEventListener('keydown', (e) => {
-            if (e.key === 'Backspace' && input.value === '' && i > 0) {
-                inputs[i - 1].focus();
-            }
-        });
-
-        // Only allow digits
-        input.addEventListener('keypress', (e) => {
-            if (!/\d/.test(e.key)) {
-                e.preventDefault();
-            }
-        });
-    });
-
-    // On submit, combine inputs into hidden field
-    function combineCodeInputs() {
-        let code = '';
-        inputs.forEach(input => code += input.value);
-        if (code.length !== inputs.length) {
-            alert('Please enter all 6 digits of the verification code.');
-            return false;
-        }
-        document.getElementById('combined-code').value = code;
-        return true; // allow form submit
-    }
-</script>
     </div>
+
+    <!-- Load jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const inputs = document.querySelectorAll('.code-input');
+
+            inputs.forEach((input, i) => {
+                input.addEventListener('input', () => {
+                    if (input.value.length === 1 && i < inputs.length - 1) {
+                        inputs[i + 1].focus();
+                    }
+                });
+
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Backspace' && input.value === '' && i > 0) {
+                        inputs[i - 1].focus();
+                    }
+                });
+
+                input.addEventListener('keypress', (e) => {
+                    if (!/\d/.test(e.key)) {
+                        e.preventDefault();
+                    }
+                });
+            });
+
+            // Combine code inputs and validate on form submit
+            document.querySelector('form').onsubmit = function () {
+                let code = '';
+                inputs.forEach(input => code += input.value);
+                if (code.length !== inputs.length) {
+                    alert('Please enter all 6 digits of the verification code.');
+                    return false;
+                }
+                document.getElementById('combined-code').value = code;
+                return true; // allow form submit
+            };
+
+        });
+    </script>
 </body>
 </html>

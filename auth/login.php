@@ -86,9 +86,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <div class="toast" id="successToast">Login successful! Redirecting...</div>
 
+<div class="toast" id="verifyToast" style="display:none;">
+  Email verified successfully. You may now log in.
+</div>
+
+
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
     $(document).ready(function () {
+        // Show success toast for verified email
+        if (localStorage.getItem('verificationSuccess') === '1') {
+            $('#verifyToast').fadeIn(300);
+            setTimeout(function () {
+                $('#verifyToast').fadeOut(400);
+            }, 3000);
+            localStorage.removeItem('verificationSuccess');
+        }
+
+        // Show success toast and redirect after login
         if (localStorage.getItem('loginSuccess') === '1') {
             $('#successToast').fadeIn(300);
 
@@ -109,6 +124,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     });
 </script>
+
 </body>
 </html>
 

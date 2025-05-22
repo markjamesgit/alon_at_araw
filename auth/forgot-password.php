@@ -3,6 +3,7 @@ require '../config/db.php';
 require '../mail/MailSender.php';
 
 $message = "";
+$emailError = false;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim($_POST['email']);
@@ -29,12 +30,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 exit();
             } else {
                 $message = "Failed to send reset email. Please try again.";
+                $emailError = true;
             }
         } else {
             $message = "Failed to set reset code. Try again later.";
+            $emailError = true;
         }
     } else {
+        // Generic message to prevent email enumeration
         $message = "If the email exists in our system, you will receive a reset code.";
+        $emailError = true;
     }
 }
 ?>
@@ -55,22 +60,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <form method="POST" action="">
             <div class="input-container">
                 <label for="email">Enter your email address</label>
-                <input type="email" name="email" id="email" required>
+                <input type="email" name="email" id="email" required
+                       value="<?= htmlspecialchars($_POST['email'] ?? '') ?>"
+                       class="<?= $emailError ? 'error' : '' ?>">
+                <?php if ($emailError): ?>
+                    <div class="error-text"><?= htmlspecialchars($message) ?></div>
+                <?php endif; ?>
             </div>
 
             <button type="submit">Send Reset Code</button>
         </form>
-
-        <?php if (!empty($message)) : ?>
-            <div class="error-msg"><?= htmlspecialchars($message) ?></div>
-        <?php endif; ?>
 
         <div class="links">
             <p>
                 Back to
                 <a href="login.php">Login</a>
             </p>
-        </p>
+        </div>
     </div>
 </body>
 </html>
