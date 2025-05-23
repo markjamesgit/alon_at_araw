@@ -101,15 +101,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="stylesheet" href="../assets/styles/register.css" />
     <link rel="stylesheet" href="../assets/global.css" />
     <link rel="icon" type="image/png" href="../assets/images/logo/logo.png" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 <body>
     <div class="login-container">
         <h2>Register</h2>
 
         <form method="POST" action="" enctype="multipart/form-data">
-            <div class="input-container">
-                <label for="profile_image">Profile Image</label>
-                <input type="file" name="profile_image" id="profile_image" accept="image/*" />
+            <div class="input-container file-upload">
+            <label for="profile_image" id="profileLabel">
+                <i class="fas fa-image upload-icon"></i> Upload Profile Image
+            </label>
+            <input type="file" name="profile_image" id="profile_image" accept="image/*">
             </div>
 
             <div class="input-container">
@@ -183,6 +186,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 
     <script>
+     document.getElementById('profile_image').addEventListener('change', function () {
+    const label = document.getElementById('profileLabel');
+    const fileName = this.files[0]?.name || "Upload Profile Image";
+    label.innerHTML = `<i class="fas fa-image upload-icon"></i> ${fileName}`;
+  });
+
     function calculateAge() {
         const birthday = document.getElementById('birthday').value;
         if (!birthday) return;
