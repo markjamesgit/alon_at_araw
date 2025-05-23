@@ -32,7 +32,7 @@ $customer = $stmt->fetch();
 />
     <link rel="stylesheet" href="/alon_at_araw/assets/styles/customer-header.css">
     <link rel="stylesheet" href="/alon_at_araw/assets/global.css">
-    <link rel="icon" type="image/png" href="../../assets/images/logo/logo.png" />
+    <link rel="icon" type="image/png" href="/alon_at_araw/assets/images/logo/logo.png" />
 
 </head>
 <body>
