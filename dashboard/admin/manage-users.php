@@ -85,6 +85,7 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
     </div>
   </main>
 </div>
+</div>
 
 <!-- Unblock Modal -->
 <div id="unblockModal" class="modal-backdrop" style="display: none;">
@@ -147,14 +148,14 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
     const search = $(this).val().toLowerCase();
     let found = false;
     $('.user-table tbody tr').each(function () {
-      const name = $(this).find('td:eq(1)').text().toLowerCase();
-      const email = $(this).find('td:eq(2)').text().toLowerCase();
+      const name = $(this).find('td:eq(2)').text().toLowerCase();
+      const email = $(this).find('td:eq(3)').text().toLowerCase();
       const match = name.includes(search) || email.includes(search);
       $(this).toggle(match);
       if (match) found = true;
     });
     if (!found) {
-      $('.user-table tbody').append('<tr class="no-found"><td colspan="3">No users found</td></tr>');
+      $('.user-table tbody').append('<tr class="no-found"><td colspan="5">No users found</td></tr>');
     } else {
       $('.user-table tbody .no-found').remove();
     }
