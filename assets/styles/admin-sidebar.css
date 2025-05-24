@@ -1,13 +1,13 @@
 :root {
   --sidebar-width: 280px;
-  --color-primary: #0d9488; /* Teal-600 */
-  --color-primary-hover: #0f766e; /* Teal-700 */
-  --color-bg: #f0fdfa; /* Light teal background */
+  --color-primary: #0d9488;
+  --color-primary-hover: #0f766e; 
+  --color-bg: #f0fdfa; 
   --color-sidebar-bg: #ffffff;
-  --color-text-primary: #1e293b; /* Slate-800 */
-  --color-text-secondary: #64748b; /* Slate-500 */
+  --color-text-primary: #1e293b; 
+  --color-text-secondary: #64748b; 
   --color-text-hover: #0d9488;
-  --color-border: #e2e8f0; /* Slate-200 */
+  --color-border: #e2e8f0; 
   --color-shadow: rgba(0, 0, 0, 0.05);
 }
 
