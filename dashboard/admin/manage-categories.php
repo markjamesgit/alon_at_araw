@@ -243,22 +243,24 @@ function closeModal() {
     $('#unblockModal').fadeOut(200);
   }
 
+$(document).ready(function() {
 $('#searchInput').on('keyup', function () {
     const search = $(this).val().toLowerCase();
     let found = false;
     $('.user-table tbody tr').each(function () {
-      const name = $(this).find('td:eq(2)').text().toLowerCase();
-      const email = $(this).find('td:eq(3)').text().toLowerCase();
+      const name = $(this).find('td:eq(3)').text().toLowerCase();
+      const email = $(this).find('td:eq(4)').text().toLowerCase();
       const match = name.includes(search) || email.includes(search);
       $(this).toggle(match);
       if (match) found = true;
     });
     if (!found) {
-      $('.user-table tbody').append('<tr class="no-found"><td colspan="3">No categories found. Try searching again.</td></tr>');
+      $('.user-table tbody').append('<tr class="no-found"><td colspan="6">No categories found. Try searching again.</td></tr>');
     } else {
       $('.user-table tbody .no-found').remove();
     }
   });
+});
 
 document.getElementById('select-all').addEventListener('click', function () {
   document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = this.checked);
@@ -283,7 +285,7 @@ document.addEventListener('DOMContentLoaded', function () {
       const preview = document.getElementById('preview-img');
       const label = document.getElementById('categoryLabel');
       const fileName = file?.name || "Upload Image";
-      label.innerHTML = `<span class="upload-icon">📁</span> ${fileName}`;
+      label.innerHTML = `<i class="fas fa-upload upload-icon"></i> ${fileName}`;
 
       if (file && file.type.startsWith('image/')) {
         const reader = new FileReader();
@@ -309,11 +311,11 @@ document.addEventListener('DOMContentLoaded', function () {
     if (action === "edited") message = "Category successfully updated!";
     if (action === "deleted") {
       message = "Category successfully deleted!";
-      bgColor = "#dc3545"; // red for delete
+      bgColor = "#dc3545"; 
     }
     if (action === "multiple_deleted") {
       message = "Categories successfully deleted!";
-      bgColor = "#dc3545"; // red for delete
+      bgColor = "#dc3545";
     }
 
     $.toast({

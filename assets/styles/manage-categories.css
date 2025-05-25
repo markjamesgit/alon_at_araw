@@ -44,7 +44,7 @@
     border-radius: 10px;
 }
 
-  .category-form-wrapper {
+.category-form-wrapper {
     display: flex;
     flex-wrap: wrap;
     gap: 40px;
@@ -56,17 +56,17 @@
     box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
   }
 
-  .category-form {
+.category-form {
     flex: 1 1 50%;
     display: flex;
     flex-direction: column;
   }
 
-  #category-image {
+#category-image {
     display: none;
   }
 
-  .image-preview-wrapper {
+.image-preview-wrapper {
     flex: 1 1 40%;
     text-align: center;
   }
