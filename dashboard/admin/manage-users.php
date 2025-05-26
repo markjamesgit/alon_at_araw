@@ -98,8 +98,8 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
     </div>
     <div id="modalError" class="modal-error"></div>
     <div class="modal-actions">
-      <button class="btn-confirm" onclick="confirmUnblock()">Confirm</button>
-      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="md-btn md-btn-primary" onclick="confirmUnblock()">Confirm</button>
+      <button class="md-btn md-btn-secondary" onclick="closeModal()">Cancel</button>
     </div>
   </div>
 </div>
@@ -115,8 +115,8 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
     </div>
     <div id="modalErrorBlock" class="modal-error"></div>
     <div class="modal-actions">
-      <button class="btn-confirm" onclick="confirmBlock()">Confirm</button>
-      <button class="btn-cancel" onclick="closeBlockModal()">Cancel</button>
+      <button class="md-btn md-btn-primary" onclick="confirmBlock()">Confirm</button>
+      <button class="md-btn md-btn-secondary" onclick="closeBlockModal()">Cancel</button>
     </div>
   </div>
 </div>

@@ -166,7 +166,7 @@ $products = $conn->query("
 
   <!-- Bulk Delete -->
   <form method="POST">
-    <button type="submit" name="delete_selected" class="md-btn danger" onclick="return confirm('Delete selected?')">Delete Selected</button>
+    <button type="button" id="triggerBulkDelete" class="md-btn danger">Delete Selected</button>
     <div class="table-container">
       <table class="user-table">
         <thead>
@@ -344,6 +344,21 @@ $products = $conn->query("
   </div>
 </div>
 
+<!-- Bulk Delete Confirmation Modal -->
+<div id="bulkDeleteModal" class="unblock-modal" style="display:none;">
+  <div class="modal-card">
+    <h2 class="modal-title">Confirm Bulk Deletion</h2>
+    <form id="bulkDeleteForm" method="POST">
+      <input type="hidden" name="delete_selected" value="1" />
+      <p>Are you sure you want to delete the selected products?</p>
+      <div class="modal-actions">
+        <button type="submit" class="md-btn md-btn-primary">Yes, Delete All</button>
+        <button type="button" id="cancelBulkDelete" class="md-btn md-btn-secondary">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-toast-plugin/1.3.2/jquery.toast.min.js"></script>
 
@@ -367,10 +382,45 @@ $products = $conn->query("
       }
     });
 
-    // Handle "Select All" checkbox for bulk delete
-    $('#select-all').on('change', function () {
-      $('input[name="selected_ids[]"]').prop('checked', this.checked);
+    
+        // Select All toggle for bulk actions
+        $('#select-all').on('change', function () {
+          $('input[name="selected_ids[]"]').prop('checked', this.checked);
+        });
+
+        $('#triggerBulkDelete').on('click', function () {
+      const selected = $('input[name="selected_ids[]"]:checked');
+      if (selected.length === 0) {
+        $.toast({
+          heading: 'No Selection',
+          text: 'Please select at least one porduct to delete.',
+          icon: 'warning',
+          showHideTransition: 'slide',
+          position: 'top-right',
+          loaderBg: '#f0ad4e',
+        });
+        return;
+      }
+
+      // Clear and append hidden inputs to the correct form
+      const hiddenContainer = $('#bulkDeleteForm');
+      hiddenContainer.find('input[name="selected_ids[]"]').remove();
+
+      selected.each(function () {
+        hiddenContainer.append(
+          $('<input>', {
+            type: 'hidden',
+            name: 'selected_ids[]',
+            value: $(this).val()
+          })
+        );
+      });
+
+      $('#bulkDeleteModal').fadeIn(200);
     });
+
+    // Cancel bulk delete modal
+    $('#cancelBulkDelete').on('click', () => $('#bulkDeleteModal').fadeOut(200));
 
     // Edit button click handler
     $('.edit-btn').on('click', function () {
@@ -476,28 +526,28 @@ $products = $conn->query("
       }
     });
 
-    // Toast messages
-    <?php if (isset($_SESSION['toast'])) : ?>
+        // Toast messages
+    <?php if (isset($_SESSION['toast'])): ?>
       let toastMessage = '';
       switch ('<?= $_SESSION['toast'] ?>') {
         case 'added':
-          toastMessage = 'Product successfully added!';
+          toastMessage = 'Product added.';
           break;
         case 'edited':
-          toastMessage = 'Product successfully updated!';
+          toastMessage = 'Product updated.';
           break;
         case 'deleted':
-          toastMessage = 'Product successfully deleted!';
+          toastMessage = 'Product deleted.';
           break;
         case 'multiple_deleted':
-          toastMessage = 'Selected products successfully deleted!';
+          toastMessage = 'Selected products deleted.';
           break;
       }
       $.toast({
-        heading: 'Success',
+        heading: toastMessage.includes('deleted') ? 'Deleted' : 'Success',
         text: toastMessage,
+        icon: toastMessage.includes('deleted') ? 'info' : 'success',
         showHideTransition: 'slide',
-        icon: 'success',
         position: 'top-right',
         loaderBg: '#5ba035',
       });

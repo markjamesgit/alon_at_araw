@@ -77,7 +77,7 @@ $categories = $conn->query("SELECT * FROM categories ORDER BY id DESC")->fetchAl
   <title>Manage Categories - Alon at Araw</title>
   <link rel="stylesheet" href="/alon_at_araw/assets/styles/manage-categories.css">
   <link rel="stylesheet" href="/alon_at_araw/assets/global.css">
-  <link rel="icon" type="image/png" href="/alon_at_araw/assets/images/logo.png"/>
+  <link rel="icon" type="image/png" href="../../assets/images/logo/logo.png"/>
     <link
   rel="stylesheet"
   href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
@@ -132,7 +132,7 @@ $categories = $conn->query("SELECT * FROM categories ORDER BY id DESC")->fetchAl
 
   <!-- Bulk Delete -->
   <form method="POST">
-    <button type="submit" name="delete_selected" class="md-btn danger" onclick="return confirm('Delete selected categories?')">Delete Selected</button>
+    <button type="button" id="triggerBulkDelete" class="md-btn danger">Delete Selected</button>
     <div class="table-container">
       <table class="user-table">
         <thead>
@@ -253,7 +253,8 @@ $categories = $conn->query("SELECT * FROM categories ORDER BY id DESC")->fetchAl
   <div class="modal-card">
     <h2 class="modal-title">Confirm Deletion</h2>
     <form id="deleteForm" method="POST">
-      <input type="hidden" name="delete_id" id="delete_id" />
+      <input type="hidden" name="delete_single" value="1" />
+      <input type="hidden" id="delete_id" name="delete_id" />
       <p>Are you sure you want to delete this category?</p>
       <div class="modal-actions">
         <button type="submit" name="delete_single" class="md-btn md-btn-primary">Delete</button>
@@ -262,6 +263,22 @@ $categories = $conn->query("SELECT * FROM categories ORDER BY id DESC")->fetchAl
     </form>
   </div>
 </div>
+
+<!-- Bulk Delete Confirmation Modal -->
+<div id="bulkDeleteModal" class="unblock-modal" style="display:none;">
+  <div class="modal-card">
+    <h2 class="modal-title">Confirm Bulk Deletion</h2>
+    <form id="bulkDeleteForm" method="POST">
+      <input type="hidden" name="delete_selected" value="1" />
+      <p>Are you sure you want to delete the selected categories?</p>
+      <div class="modal-actions">
+        <button type="submit" class="md-btn md-btn-primary">Yes, Delete All</button>
+        <button type="button" id="cancelBulkDelete" class="md-btn md-btn-secondary">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-toast-plugin/1.3.2/jquery.toast.min.js"></script>
@@ -313,10 +330,45 @@ $categories = $conn->query("SELECT * FROM categories ORDER BY id DESC")->fetchAl
       }
     });
 
-    // Select All toggle for bulk actions
-    $('#select-all').on('change', function () {
-      $('input[name="selected_ids[]"]').prop('checked', this.checked);
+        // Select All toggle for bulk actions
+        $('#select-all').on('change', function () {
+          $('input[name="selected_ids[]"]').prop('checked', this.checked);
+        });
+
+        $('#triggerBulkDelete').on('click', function () {
+      const selected = $('input[name="selected_ids[]"]:checked');
+      if (selected.length === 0) {
+        $.toast({
+          heading: 'No Selection',
+          text: 'Please select at least one category to delete.',
+          icon: 'warning',
+          showHideTransition: 'slide',
+          position: 'top-right',
+          loaderBg: '#f0ad4e',
+        });
+        return;
+      }
+
+      // Clear and append hidden inputs to the correct form
+      const hiddenContainer = $('#bulkDeleteForm');
+      hiddenContainer.find('input[name="selected_ids[]"]').remove();
+
+      selected.each(function () {
+        hiddenContainer.append(
+          $('<input>', {
+            type: 'hidden',
+            name: 'selected_ids[]',
+            value: $(this).val()
+          })
+        );
+      });
+
+      $('#bulkDeleteModal').fadeIn(200);
     });
+
+    // Cancel bulk delete modal
+    $('#cancelBulkDelete').on('click', () => $('#bulkDeleteModal').fadeOut(200));
+
 
     // Edit button click handler
     $('.edit-btn').on('click', function () {
@@ -363,6 +415,7 @@ $categories = $conn->query("SELECT * FROM categories ORDER BY id DESC")->fetchAl
       $('#delete_id').val(id);
       $('#deleteModal').fadeIn(200);
     });
+
 
     // Cancel delete modal
     $('#cancelDelete').on('click', () => $('#deleteModal').fadeOut(200));

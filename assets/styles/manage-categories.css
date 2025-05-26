@@ -186,7 +186,7 @@
   background-color: var(--color-primary-hover);
 }
 
-#editModal, #deleteModal {
+#editModal, #deleteModal, #bulkDeleteModal {
   display: none;
   display: flex;
   justify-content: center;

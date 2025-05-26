@@ -114,7 +114,12 @@
 
 .filter-select {
   width: 100%;
-  background: var(--color-bg);
+  padding: 10px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  font-size: 0.95rem;
+  outline: none;
+  background: white;
   color: var(--color-text-primary);
 }
 
@@ -186,7 +191,7 @@
   background-color: var(--color-primary-hover);
 }
 
-#unblockModal, #deleteModal {
+#unblockModal, #deleteModal, #bulkDeleteModal {
   display: flex;
   justify-content: center;
   align-items: center;
