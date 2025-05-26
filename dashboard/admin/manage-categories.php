@@ -1,47 +1,48 @@
 <?php
 session_start();
-require_once '../../config/db.php';
+require_once __DIR__ . '/../../config/db.php';
 
 // Handle Add Category
 if (isset($_POST['add_category'])) {
-    $name = trim($_POST['name']);
+    $name = trim($_POST['category_name']);
     $description = trim($_POST['description']);
 
-    // Handle image upload
     $imageName = null;
-    if (!empty($_FILES['image']['name'])) {
-        $imageName = uniqid() . '_' . basename($_FILES['image']['name']);
-        $targetPath = '../../assets/uploads/categories/' . $imageName;
-        move_uploaded_file($_FILES['image']['tmp_name'], $targetPath);
+    if (!empty($_FILES['category_image']['name'])) {
+        $imageName = uniqid() . '_' . basename($_FILES['category_image']['name']);
+        $targetDir = $_SERVER['DOCUMENT_ROOT'] . '/alon_at_araw/assets/uploads/categories/';
+        $targetPath = $targetDir . $imageName;
+        move_uploaded_file($_FILES['category_image']['tmp_name'], $targetPath);
     }
 
     $stmt = $conn->prepare("INSERT INTO categories (name, description, image) VALUES (?, ?, ?)");
     $stmt->execute([$name, $description, $imageName]);
 
-     $_SESSION['toast'] = 'added';
-    header("Location: manage-categories.php");
+    $_SESSION['toast'] = 'added';
+    header("Location: /alon_at_araw/dashboard/admin/manage-categories.php");
     exit;
 }
 
 // Handle Edit Category
 if (isset($_POST['edit_category'])) {
     $id = $_POST['edit_id'];
-    $name = trim($_POST['edit_name']);
+    $name = trim($_POST['edit_category_name']);
     $description = trim($_POST['edit_description']);
 
     $imageName = $_POST['current_image'];
 
-    if (!empty($_FILES['edit_image']['name'])) {
-        $imageName = uniqid() . '_' . basename($_FILES['edit_image']['name']);
-        $targetPath = '../../assets/uploads/categories/' . $imageName;
-        move_uploaded_file($_FILES['edit_image']['tmp_name'], $targetPath);
+    if (!empty($_FILES['edit_category_image']['name'])) {
+        $imageName = uniqid() . '_' . basename($_FILES['edit_category_image']['name']);
+        $targetDir = $_SERVER['DOCUMENT_ROOT'] . '/alon_at_araw/assets/uploads/categories/';
+        $targetPath = $targetDir . $imageName;
+        move_uploaded_file($_FILES['edit_category_image']['tmp_name'], $targetPath);
     }
 
     $stmt = $conn->prepare("UPDATE categories SET name = ?, description = ?, image = ? WHERE id = ?");
     $stmt->execute([$name, $description, $imageName, $id]);
 
     $_SESSION['toast'] = 'edited';
-    header("Location: manage-categories.php");
+    header("Location: /alon_at_araw/dashboard/admin/manage-categories.php");
     exit;
 }
 
@@ -51,21 +52,21 @@ if (isset($_POST['delete_single'])) {
     $stmt->execute([$_POST['delete_id']]);
 
     $_SESSION['toast'] = 'deleted';
-    header("Location: manage-categories.php");
+    header("Location: /alon_at_araw/dashboard/admin/manage-categories.php");
     exit;
 }
 
-// Handle Multiple Delete
+// Handle Bulk Delete
 if (isset($_POST['delete_selected']) && isset($_POST['selected_ids'])) {
     $ids = implode(',', array_map('intval', $_POST['selected_ids']));
     $conn->query("DELETE FROM categories WHERE id IN ($ids)");
 
     $_SESSION['toast'] = 'multiple_deleted';
-    header("Location: manage-categories.php");
+    header("Location: /alon_at_araw/dashboard/admin/manage-categories.php");
     exit;
 }
 
-// Fetch all categories
+// Fetch categories for display
 $categories = $conn->query("SELECT * FROM categories ORDER BY id DESC")->fetchAll();
 ?>
 
@@ -76,7 +77,7 @@ $categories = $conn->query("SELECT * FROM categories ORDER BY id DESC")->fetchAl
   <title>Manage Categories - Alon at Araw</title>
   <link rel="stylesheet" href="/alon_at_araw/assets/styles/manage-categories.css">
   <link rel="stylesheet" href="/alon_at_araw/assets/global.css">
-  <link rel="icon" type="image/png" href="../../assets/images/logo/logo.png"/>
+  <link rel="icon" type="image/png" href="/alon_at_araw/assets/images/logo.png"/>
     <link
   rel="stylesheet"
   href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
@@ -86,249 +87,309 @@ $categories = $conn->query("SELECT * FROM categories ORDER BY id DESC")->fetchAl
 <body>
 <div class="main-container">
   <?php include '../../includes/admin-sidebar.php'; ?>
+
   <div class="content-wrapper">
+
     <main class="user-management">
       <h1>Manage Categories</h1>
-      <p class="subtitle">Add categories to your store effortlessly from here.</p>
+    <p class="subtitle">Manage all categories for your store. You can add, edit and delete categories here.</p>
 
-      <!-- Add Category Form -->
-        <div class="category-form-wrapper">
-          <!-- Left: Form -->
-          <form method="POST" enctype="multipart/form-data" class="category-form">
-            <div class="input-container">
-              <label for="category-name">Category Name</label>
-              <input type="text" id="category-name" name="name" placeholder="Enter category name" required>
-            </div>
+  <!-- Add Category Form -->
+  <div class="category-form-wrapper">
+    <form method="POST" enctype="multipart/form-data" class="category-form">
+      <div class="input-container file-upload">
+        <label for="category_image" class="file-label" id="categoryLabel">
+          <i class="fas fa-upload upload-icon"></i>
+          Upload Image (Optional)
+        </label>
+        <input type="file" id="category_image" name="category_image" accept="image/*" />
+      </div>
 
-            <div class="input-container">
-              <label for="category-description">Description</label>
-              <input type="text" id="category-description" name="description" placeholder="Enter category description" required>
-            </div>
+      <div class="input-container">
+        <label for="category-name">Category Name</label>
+        <input type="text" id="category-name" name="category_name" placeholder="Enter category name" required />
+      </div>
 
-            <div class="input-container file-upload">
-              <label for="category-image" class="file-label" id="categoryLabel">
-                <i class="fas fa-upload upload-icon"></i>
-                Upload Image
-              </label>
-              <input type="file" id="category-image" name="image" accept="image/*">
-            </div>
+      <div class="input-container">
+        <label for="description">Description</label>
+        <input type="text" id="description" name="description" placeholder="Enter category description" />
+      </div>
 
-            <button type="submit" name="add_category" class="md-btn md-btn-primary">Add Category</button>
-          </form>
+      <button type="submit" name="add_category" class="md-btn md-btn-primary">Add Category</button>
+    </form>
 
-          <!-- Right: Live Preview -->
-          <div class="image-preview-wrapper">
-            <h3>Image Preview</h3>
-            <div class="image-preview">
-              <img id="preview-img" src="" alt="Image Preview" />
-            </div>
-          </div>
-        </div>
-
-       <div class="user-controls">
-      <input type="text" id="searchInput" placeholder="Search categories..." class="search-input" />
+    <div class="image-preview-wrapper">
+      <h3>Image Preview</h3>
+      <div class="image-preview">
+        <img id="preview-img" src="" alt="Image Preview" style="display:none;" />
+      </div>
+    </div>
   </div>
 
-      <!-- Bulk Delete -->
-      <form method="POST">
-        <button type="submit" name="delete_selected" class="md-btn danger" onclick="return confirm('Delete selected?')"><i class="fa-solid fa-trash-can"></i> Delete Selected</button>
-        <div class="table-container">
-         <table class="user-table">
-          <thead>
-            <tr>
-              <th><label class="md-checkbox"><input type="checkbox" id="select-all"><span></span></label></th>
-              <th>#</th>
-              <th>Image</th>
-              <th>Name</th>
-              <th>Description</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <?php foreach ($categories as $cat): ?>
-            <tr>
-              <td><label class="md-checkbox">
-              <input type="checkbox" name="selected_ids[]" value="<?= $cat['id'] ?>"><span></span>
-            </label>
-          </td>
-              <td><?= $cat['id'] ?></td>
-              <td>
-              <?php
-                $rawImage = $cat['image'] ?? '';
-                $cleanImage = preg_replace('#^(\.\./)+#', '', $rawImage);
+  <div class="user-controls">
+    <input type="text" id="searchInput" placeholder="Search categories..." class="search-input" />
+  </div>
 
-                $categoryImagePath = $cleanImage
-                    ? '/alon_at_araw/assets/uploads/categories/' . $cleanImage
-                    : '/alon_at_araw/assets/images/no-image.png'; // default image
-              ?>
-              <img src="<?= htmlspecialchars($categoryImagePath) ?>" class="profile-pic" alt="Category Image">
-            </td>
-              <td><?= htmlspecialchars($cat['name']) ?></td>
-              <td><?= htmlspecialchars($cat['description']) ?></td>
-              <td>
-                <button type="button" class="btn-unblock" onclick="editCategory(<?= $cat['id'] ?>, '<?= htmlspecialchars($cat['name'], ENT_QUOTES) ?>', '<?= htmlspecialchars($cat['description'], ENT_QUOTES) ?>', '<?= $cat['image'] ?>')">Edit</button>
-                <form method="POST" style="display:inline;">
-                  <input type="hidden" name="delete_id" value="<?= $cat['id'] ?>">
-                  <button type="submit" class="btn-unblock" name="delete_single" onclick="return confirm('Delete this category?')">Delete</button>
-                </form>
+  <!-- Bulk Delete -->
+  <form method="POST">
+    <button type="submit" name="delete_selected" class="md-btn danger" onclick="return confirm('Delete selected categories?')">Delete Selected</button>
+    <div class="table-container">
+      <table class="user-table">
+        <thead>
+          <tr>
+            <th><label class="md-checkbox"><input type="checkbox" id="select-all" /><span></span></label></th>
+            <th>#</th>
+            <th>Image</th>
+            <th>Name</th>
+            <th>Description</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <?php if (count($categories) > 0): ?>
+            <?php foreach ($categories as $cat): ?>
+              <tr>
+                <td>
+                  <label class="md-checkbox">
+                    <input type="checkbox" name="selected_ids[]" value="<?= $cat['id'] ?>" /><span></span>
+                  </label>
+                </td>
+                <td><?= $cat['id'] ?></td>
+                <td>
+                  <?php
+                    $rawImage = $cat['image'] ?? '';
+                    $cleanImage = preg_replace('#^(\.\./)+#', '', $rawImage);
+                    $categoryImagePath = $cleanImage
+                      ? '/alon_at_araw/assets/uploads/categories/' . $cleanImage
+                      : '/alon_at_araw/assets/images/no-image.png';
+                  ?>
+                  <img src="<?= htmlspecialchars($categoryImagePath) ?>" class="profile-pic" alt="Category Image" />
+                </td>
+                <td><?= htmlspecialchars($cat['name']) ?></td>
+                <td><?= htmlspecialchars($cat['description']) ?></td>
+                <td>
+                  <button
+                    type="button"
+                    class="custom-edit-btn edit-btn"
+                    data-id="<?= $cat['id'] ?>"
+                    data-name="<?= htmlspecialchars($cat['name'], ENT_QUOTES) ?>"
+                    data-description="<?= htmlspecialchars($cat['description'], ENT_QUOTES) ?>"
+                    data-image="<?= htmlspecialchars($cat['image'], ENT_QUOTES) ?>"
+                  >
+                    <i class="fas fa-pen"></i> Edit
+                  </button>
+                  <button
+                    type="button"
+                    class="custom-delete-btn delete-category"
+                    data-id="<?= $cat['id'] ?>"
+                  >
+                    <i class="fas fa-trash"></i> Delete
+                  </button>
+                </td>
+              </tr>
+            <?php endforeach; ?>
+          <?php else: ?>
+            <tr>
+              <td colspan="6" class="text-center">
+                <p class="no-data-message">No categories found.</p>
               </td>
             </tr>
-            <?php endforeach; ?>
-          </tbody>
-        </table>
-        </div>
-      </form>
-    </main>
-  </div>
-</div>
+          <?php endif; ?>
+        </tbody>
+      </table>
+    </div>
+  </form>
+</main>
 
-    <!-- Edit Modal -->
-<div id="unblockModal" class="modal-backdrop" style="display: none;">
+<!-- Edit Modal -->
+<div id="editModal" class="unblock-modal" style="display:none;">
   <div class="modal-card">
-    <h3 class="modal-title">Edit Category</h3>
-    <form method="POST" enctype="multipart/form-data" class="modal-form">
-      
-      <input type="hidden" name="edit_id" id="edit_id">
-      <input type="hidden" name="current_image" id="current_image">
-
-      <!-- Current Image Display -->
-      <div class="input-container">
-        <label>Current Image:</label>
-        <img id="currentImagePreview" src="" alt="Current Image" class="current-image-preview">
-      </div>
-
-      <div class="input-container">
-        <label for="edit_name">Category Name</label>
-        <input type="text" name="edit_name" id="edit_name" required />
-      </div>
-
-       <div class="input-container">
-        <label for="edit_description">Description</label>
-        <input type="text" name="edit_description" id="edit_description" required />
-      </div>
+    <h2 class="modal-title">Edit Category</h2>
+    <form id="editForm" method="POST" class="modal-form" enctype="multipart/form-data">
+      <input type="hidden" id="edit_id" name="edit_id" />
+      <input type="hidden" id="current_image" name="current_image" />
 
       <div class="input-container file-upload">
-        <label for="edit_image" id="profileLabel">
-          <i class="fas fa-image upload-icon"></i> Upload New Image
+        <div class="image-preview">
+          <img id="currentImagePreview" src="" alt="Current Image" />
+        </div>
+        <label for="edit_category_image" class="file-label" id="editCategoryLabel">
+          <i class="fas fa-upload upload-icon"></i> Change Image (Optional)
         </label>
-        <input type="file" name="edit_image" accept="image/*" class="md-input-file" id="edit_image">
+        <input type="file" id="edit_category_image" name="edit_category_image" accept="image/*" />
+      </div>
+
+      <div class="input-container">
+        <label for="edit_category_name">Category Name</label>
+        <input
+          type="text"
+          id="edit_category_name"
+          name="edit_category_name"
+          placeholder="Enter category name"
+          required
+        />
+      </div>
+
+      <div class="input-container">
+        <label for="edit_description">Description</label>
+        <input
+          type="text"
+          id="edit_description"
+          name="edit_description"
+          placeholder="Enter category description"
+        />
       </div>
 
       <div class="modal-actions">
-        <button type="submit" class="md-btn md-btn-primary" name="edit_category">Update</button>
-        <button type="button" class="md-btn md-btn-secondary" onclick="closeModal()">Cancel</button>
+        <button type="submit" name="edit_category" class="md-btn md-btn-primary">Save Changes</button>
+        <button type="button" id="cancelEdit" class="md-btn md-btn-secondary">Cancel</button>
       </div>
     </form>
   </div>
 </div>
 
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="unblock-modal" style="display:none;">
+  <div class="modal-card">
+    <h2 class="modal-title">Confirm Deletion</h2>
+    <form id="deleteForm" method="POST">
+      <input type="hidden" name="delete_id" id="delete_id" />
+      <p>Are you sure you want to delete this category?</p>
+      <div class="modal-actions">
+        <button type="submit" name="delete_single" class="md-btn md-btn-primary">Delete</button>
+        <button type="button" id="cancelDelete" class="md-btn md-btn-secondary">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-toast-plugin/1.3.2/jquery.toast.min.js"></script>
 
-<?php if (isset($_SESSION['toast'])): ?>
 <script>
-function editCategory(id, name, description, image) {
-  document.getElementById('edit_id').value = id;
-  document.getElementById('edit_name').value = name;
-  document.getElementById('edit_description').value = description;
-  document.getElementById('current_image').value = image;
+  $(document).ready(function () {
 
-    let imagePath = image ? '/alon_at_araw/assets/uploads/categories/' + image : '/alon_at_araw/assets/images/no-image.png';
-  document.getElementById('currentImagePreview').src = imagePath;
-  document.getElementById("unblockModal").style.display = "flex";
-}
+    // Toast messages
+    <?php if (isset($_SESSION['toast'])): ?>
+      let toastMessage = '';
+      switch ('<?= $_SESSION['toast'] ?>') {
+        case 'added':
+          toastMessage = 'Category added.';
+          break;
+        case 'edited':
+          toastMessage = 'Category updated.';
+          break;
+        case 'deleted':
+          toastMessage = 'Category deleted.';
+          break;
+        case 'multiple_deleted':
+          toastMessage = 'Selected categories deleted.';
+          break;
+      }
+      $.toast({
+        heading: toastMessage.includes('deleted') ? 'Deleted' : 'Success',
+        text: toastMessage,
+        icon: toastMessage.includes('deleted') ? 'info' : 'success',
+        showHideTransition: 'slide',
+        position: 'top-right',
+        loaderBg: '#5ba035',
+      });
+      <?php unset($_SESSION['toast']); ?>
+    <?php endif; ?>
 
-function closeModal() {
-    $('#unblockModal').fadeOut(200);
-  }
-
-$(document).ready(function() {
-$('#searchInput').on('keyup', function () {
-    const search = $(this).val().toLowerCase();
-    let found = false;
-    $('.user-table tbody tr').each(function () {
-      const name = $(this).find('td:eq(3)').text().toLowerCase();
-      const email = $(this).find('td:eq(4)').text().toLowerCase();
-      const match = name.includes(search) || email.includes(search);
-      $(this).toggle(match);
-      if (match) found = true;
-    });
-    if (!found) {
-      $('.user-table tbody').append('<tr class="no-found"><td colspan="6">No categories found. Try searching again.</td></tr>');
-    } else {
-      $('.user-table tbody .no-found').remove();
-    }
-  });
-});
-
-document.getElementById('select-all').addEventListener('click', function () {
-  document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = this.checked);
-});
-
-document.addEventListener('DOMContentLoaded', function () {
-  // Edit Modal Image Label
-  const editImageInput = document.getElementById('edit_image');
-  if (editImageInput) {
-    editImageInput.addEventListener('change', function () {
-      const label = document.getElementById('profileLabel');
-      const fileName = this.files[0]?.name || "Upload New Image";
-      label.innerHTML = `<i class="fas fa-image upload-icon"></i> ${fileName}`;
-    });
-  }
-
-  // Add Category Image Label + Preview
-  const categoryImageInput = document.getElementById('category-image');
-  if (categoryImageInput) {
-    categoryImageInput.addEventListener('change', function (event) {
-      const file = event.target.files[0];
-      const preview = document.getElementById('preview-img');
-      const label = document.getElementById('categoryLabel');
+    $('#category_image').on('change', function () {
+      const file = this.files[0];
+      const label = $('#categoryLabel');
       const fileName = file?.name || "Upload Image";
-      label.innerHTML = `<i class="fas fa-upload upload-icon"></i> ${fileName}`;
-
-      if (file && file.type.startsWith('image/')) {
+      label.html(`<i class="fas fa-image upload-icon"></i> ${fileName}`);
+      if (file) {
         const reader = new FileReader();
-        reader.onload = function (e) {
-          preview.src = e.target.result;
-          preview.style.display = 'block';
+        reader.onload = e => {
+          $('#preview-img').attr('src', e.target.result).show();
         };
         reader.readAsDataURL(file);
       } else {
-        preview.src = '';
-        preview.style.display = 'none';
+        $('#preview-img').hide();
       }
     });
-  }
-});
 
- $(document).ready(function () {
-    let action = "<?= $_SESSION['toast'] ?>";
-    let message = "";
-    let bgColor = "#28a745"; // green for success
-
-    if (action === "added") message = "Category successfully added!";
-    if (action === "edited") message = "Category successfully updated!";
-    if (action === "deleted") {
-      message = "Category successfully deleted!";
-      bgColor = "#dc3545"; 
-    }
-    if (action === "multiple_deleted") {
-      message = "Categories successfully deleted!";
-      bgColor = "#dc3545";
-    }
-
-    $.toast({
-      heading: 'Success',
-      text: message,
-      icon: 'success',
-      position: 'top-right',
-      loaderBg: bgColor,
-      hideAfter: 2000,
-      stack: 3
+    // Select All toggle for bulk actions
+    $('#select-all').on('change', function () {
+      $('input[name="selected_ids[]"]').prop('checked', this.checked);
     });
+
+    // Edit button click handler
+    $('.edit-btn').on('click', function () {
+      const id = $(this).data('id');
+      const name = $(this).data('name');
+      const description = $(this).data('description');
+      const image = $(this).data('image');
+
+      fillEditModal(id, name, description, image);
+    });
+
+    // Fill edit modal inputs and show modal
+    function fillEditModal(id, name, description, image) {
+      $('#edit_id').val(id);
+      $('#edit_category_name').val(name);
+      $('#edit_description').val(description);
+      $('#current_image').val(image);
+
+      if (image) {
+        const imageUrl = '/alon_at_araw/assets/uploads/categories/' + image;
+        $('#currentImagePreview').attr('src', imageUrl).show();
+        $('#current_image').val(image);
+      } else {
+        $('#currentImagePreview').attr('src', '/alon_at_araw/assets/images/no-image.png').show();
+        $('#current_image').val('');
+      }
+
+      $('#edit_category_image').on('change', function () {
+        const file = this.files[0];
+        const label = $('#editCategoryLabel');
+        const fileName = file?.name || "Upload Image";
+        label.html(`<i class="fas fa-image upload-icon"></i> ${fileName}`);
+      });
+
+      $('#editModal').fadeIn(200);
+    }
+
+    // Cancel edit modal
+    $('#cancelEdit').on('click', () => $('#editModal').fadeOut(200));
+
+    // Delete button click handler
+    $('.delete-category').on('click', function () {
+      const id = $(this).data('id');
+      $('#delete_id').val(id);
+      $('#deleteModal').fadeIn(200);
+    });
+
+    // Cancel delete modal
+    $('#cancelDelete').on('click', () => $('#deleteModal').fadeOut(200));
+
+    // Search filter
+    $('#searchInput').on('input', function () {
+      const query = $(this).val().toLowerCase();
+      let found = false;
+      $('tbody tr').each(function () {
+        const name = $(this).find('td:nth-child(4)').text().toLowerCase();
+        const description = $(this).find('td:nth-child(5)').text().toLowerCase();
+        const isMatch = name.includes(query) || description.includes(query);
+        $(this).toggle(isMatch);
+        if (isMatch) found = true;
+      });
+
+      // show "No categories found" row if no matches
+      if (!found) {
+        if ($('tbody tr.no-found').length === 0) {
+          $('tbody').append('<tr class="no-found"><td colspan="6" class="text-center">No categories found. Try searching again.</td></tr>');
+        }
+      } else {
+        $('tbody tr.no-found').remove();
+      }
+    });
+
   });
 </script>
-<?php unset($_SESSION['toast']); endif; ?>
 </body>
 </html>

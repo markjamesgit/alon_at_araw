@@ -248,7 +248,7 @@ $products = $conn->query("
 <div id="unblockModal" class="unblock-modal" style="display:none;">
   <div class="modal-card">
     <h2 class="modal-title">Edit Product</h2>
-    <form id="editForm" method="POST" class="modal-form" enctype="multipart/form-data" onsubmit="return confirm('Save changes?')">
+    <form id="editForm" method="POST" class="modal-form" enctype="multipart/form-data">
       <input type="hidden" id="edit_id" name="edit_id" />
       <input type="hidden" id="current_image" name="current_image" />
 
@@ -329,37 +329,26 @@ $products = $conn->query("
   </div>
 </div>
 
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="unblock-modal" style="display:none;">
+  <div class="modal-card">
+    <h2 class="modal-title">Confirm Deletion</h2>
+    <form id="deleteForm" method="POST">
+      <input type="hidden" name="delete_id" id="delete_id" />
+      <p>Are you sure you want to delete this product?</p>
+      <div class="modal-actions">
+        <button type="submit" name="delete_single" class="md-btn md-btn-primary">Delete</button>
+        <button type="button" id="cancelDelete" class="md-btn md-btn-secondary">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-toast-plugin/1.3.2/jquery.toast.min.js"></script>
 
 <script>
   $(document).ready(function () {
-
-    // Handle single product delete with confirmation
-  $(document).on('click', '.delete-product', function () {
-    const productId = $(this).data('id');
-    if (confirm('Delete this product?')) {
-      const form = $('<form>', {
-        method: 'POST',
-        style: 'display: none;'
-      });
-
-      form.append($('<input>', {
-        type: 'hidden',
-        name: 'delete_id',
-        value: productId
-      }));
-
-      form.append($('<input>', {
-        type: 'hidden',
-        name: 'delete_single',
-        value: '1'
-      }));
-
-      $('body').append(form);
-      form.submit();
-    }
-  });
 
     // Show image preview when uploading in Add form
     $('#product_image').on('change', function () {
@@ -423,6 +412,16 @@ $products = $conn->query("
 
       $('#unblockModal').fadeIn(200);
     }
+
+     // Delete button click handler
+    $('.delete-product').on('click', function () {
+      const id = $(this).data('id');
+      $('#delete_id').val(id);
+      $('#deleteModal').fadeIn(200);
+    });
+
+    // Cancel delete modal
+    $('#cancelDelete').on('click', () => $('#deleteModal').fadeOut(200));
 
     // Close modal function
     window.closeModal = function () {

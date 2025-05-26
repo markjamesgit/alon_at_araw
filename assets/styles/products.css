@@ -186,7 +186,7 @@
   background-color: var(--color-primary-hover);
 }
 
-#unblockModal {
+#unblockModal, #deleteModal {
   display: flex;
   justify-content: center;
   align-items: center;
