@@ -100,7 +100,6 @@
   user-select: none;
 }
 
-/* Adjust dropdown positioning to not overlap cart */
 .dropdown {
   position: absolute;
   right: 0;
@@ -148,4 +147,16 @@
 .dropdown-icon{
   color: var(--text-dark);
   font-size: 1rem;
+}
+
+.login-button {
+  background-color: var(--color-primary);
+  color: var(--color-primary-text);
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  text-decoration: none;
+  font-weight: 500;
+}
+.login-button:hover {
+  background-color: var(--color-primary-hover);
 }
