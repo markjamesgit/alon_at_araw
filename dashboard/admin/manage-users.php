@@ -127,6 +127,7 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 
 <script>
+
   let selectedUserId = null;
   let selectedUserIdBlock = null;
 
@@ -142,6 +143,26 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
         $(this).show();
       }
     });
+  });
+
+  $('#filterSelect').on('change', function () {
+    const selectedCategory = $(this).val().toLowerCase();
+    let found = false;
+
+    $('.user-table tbody tr').each(function () {
+      const isBlocked = $(this).hasClass('blocked-row');
+      const match = selectedCategory === 'all' || (selectedCategory === 'blocked' && isBlocked) || (selectedCategory === 'unblocked' && !isBlocked);
+
+      $(this).toggle(match);
+
+      if (match) found = true;
+    });
+
+    $('.user-table tbody .no-found').remove();
+
+    if (!found) {
+      $('.user-table tbody').append('<tr class="no-found"><td colspan="9" class="text-center">No users found in this category.</td></tr>');
+    }
   });
 
   $('#searchInput').on('keyup', function () {

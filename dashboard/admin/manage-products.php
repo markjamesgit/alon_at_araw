@@ -42,8 +42,8 @@ if (!in_array($tab, $allowed_tabs)) {
   <a href="?tab=products" class="md-tab <?= $tab == 'products' ? 'active' : '' ?>">Products</a>
   <a href="?tab=flavors" class="md-tab <?= $tab == 'flavors' ? 'active' : '' ?>">Flavors</a>
   <a href="?tab=addons" class="md-tab <?= $tab == 'addons' ? 'active' : '' ?>">Add-ons</a>
-  <a href="?tab=product-components" class="md-tab <?= $tab == 'product-components' ? 'active' : '' ?>">Product Components</a>
   <a href="?tab=cup-sizes" class="md-tab <?= $tab == 'cup-sizes' ? 'active' : '' ?>">Cup Sizes</a>
+  <a href="?tab=product-components" class="md-tab <?= $tab == 'product-components' ? 'active' : '' ?>">Product Components</a>
 </div>
 
       <!-- Dynamic Tab Content -->
