@@ -1,52 +1,97 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
-
-:root {
-  /* Core Theme Colors (From Your Palette) */
-  --primary: #dd7f29;        
-  --highlight: #fcc22d;      
-  --background: #fffff4;      
-  --secondary-bg: #f3e198;    
-  --text-dark: #382317;    
-  --border-color: #e5e4e3;   
-  --accent-soft: #d7b086;     
-
-  /* Button & Input Styling */
-  --button-bg: var(--primary);
-  --button-hover: #c86f20;   
-  --input-border: var(--border-color);
-  --text-color: var(--text-dark);
-  --card-bg: var(--secondary-bg);
-
-  /* Semantic Colors */
-  --success-bg: #00b74a;      
-  --success-text: #ffffff;    
-
-  --warning-bg: #ff8c00;     
-  --warning-text: #ffffff;
-
-  --info-bg: #6495ed;         
-  --info-text: #ffffff;
-
-  --error-bg: #ff3737;       
-  --error-border: #ff3737;    
-  --error-text: #ffffff;
-
-  /* Status Badges or Light Fill Variants (Optional) */
-  --badge-success: #34c759;
-  --badge-warning: #ffc107;
-  --badge-info: #007bff;
-  --badge-error: #dc3545;
+/* === Global Reset === */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
+html {
+  scroll-behavior: smooth;
+}
 
 body {
   font-family: 'Poppins', sans-serif;
-  background-color: var(--secondary-bg);
-  margin: 0;
-  padding: 0;
+  font-size: 16px;
+  line-height: 1.6;
+  background-color: #fff;
+  color: #000;
 }
 
-h1, h2, h3 {
-  font-family: 'Poppins', sans-serif;
+/* === Anchor Links === */
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* === Buttons === */
+button {
+  cursor: pointer;
+  border: none;
+  outline: none;
+  font: inherit;
+}
+
+/* === Inputs === */
+input, select, textarea {
+  font: inherit;
+  border: 1px solid #ccc;
+  padding: 0.5rem;
+  border-radius: 4px;
+}
+
+/* === Utility Classes === */
+.text-center {
+  text-align: center;
+}
+
+.flex {
+  display: flex;
+}
+
+.flex-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.hidden {
+  display: none;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+/* === Scrollbar === */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+/* === Transition Helpers === */
+.transition {
+  transition: all 0.3s ease;
+}
+
+/* === Shared Font Sizing (optional) === */
+h1, h2, h3, h4, h5, h6 {
   font-weight: 600;
+  color: inherit;
+}
+
+p {
+  margin: 0 0 1rem 0;
 }

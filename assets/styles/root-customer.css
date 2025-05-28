@@ -1,0 +1,37 @@
+:root {
+  /* Core Theme Colors (From Your Palette) */
+  --primary: #dd7f29;        
+  --highlight: #fcc22d;      
+  --background: #fffff4;      
+  --secondary-bg: #f3e198;    
+  --text-dark: #382317;    
+  --border-color: #e5e4e3;   
+  --accent-soft: #d7b086;     
+
+  /* Button & Input Styling */
+  --button-bg: var(--primary);
+  --button-hover: #c86f20;   
+  --input-border: var(--border-color);
+  --text-color: var(--text-dark);
+  --card-bg: var(--secondary-bg);
+
+  /* Semantic Colors */
+  --success-bg: #00b74a;      
+  --success-text: #ffffff;    
+
+  --warning-bg: #ff8c00;     
+  --warning-text: #ffffff;
+
+  --info-bg: #6495ed;         
+  --info-text: #ffffff;
+
+  --error-bg: #ff3737;       
+  --error-border: #ff3737;    
+  --error-text: #ffffff;
+
+  /* Status Badges or Light Fill Variants (Optional) */
+  --badge-success: #34c759;
+  --badge-warning: #ffc107;
+  --badge-info: #007bff;
+  --badge-error: #dc3545;
+}

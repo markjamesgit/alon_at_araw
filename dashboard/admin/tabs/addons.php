@@ -55,9 +55,14 @@ $addons = $conn->query("SELECT * FROM addons ORDER BY addon_id DESC")->fetchAll(
 <head>
   <meta charset="UTF-8" />
   <title>Manage Addons - Alon at Araw</title>
-  <link rel="stylesheet" href="/alon_at_araw/assets/styles/addons.css" />
-  <link rel="stylesheet" href="/alon_at_araw/assets/global.css" />
+  <link rel="stylesheet" href="/alon_at_araw/assets/global.css">
+  <link rel="stylesheet" href="/alon_at_araw/assets/styles/root-admin.css">
+  <link rel="stylesheet" href="/alon_at_araw/assets/styles/addons.css">
+  
   <link rel="icon" type="image/png" href="../../../assets/images/logo/logo.png" />
+
+  <link rel="stylesheet" href="/alon_at_araw/assets/fonts/font.css">
+
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <link href="https://cdnjs.cloudflare.com/ajax/libs/jquery-toast-plugin/1.3.2/jquery.toast.min.css" rel="stylesheet" />
 </head>

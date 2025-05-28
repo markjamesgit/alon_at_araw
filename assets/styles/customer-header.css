@@ -1,6 +1,5 @@
 .customer-header-wrapper {
   background-color: var(--background);
-  border-bottom: 2px solid var(--border-color);
 }
 
 .customer-header {
