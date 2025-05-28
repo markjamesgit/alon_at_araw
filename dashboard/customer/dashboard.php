@@ -50,7 +50,7 @@ $all_products = $stmt_all->fetchAll(PDO::FETCH_ASSOC);
   </section>
 
   <!-- About Us -->
-  <section class="about-us section">
+  <section id="about" class="about-us section">
     <div class="container about-content">
       <div class="about-image">
         <img src="/alon_at_araw/assets/images/slider/slider1.jpg" alt="Coffee Lifestyle">
@@ -65,7 +65,7 @@ $all_products = $stmt_all->fetchAll(PDO::FETCH_ASSOC);
   </section>
 
 <!-- Featured Products -->
-<section class="section">
+<section id="featured" class="section">
   <div class="container">
     <h2 class="section-title">Featured Drinks</h2>
     <div class="product-slider-container">
@@ -113,7 +113,7 @@ $all_products = $stmt_all->fetchAll(PDO::FETCH_ASSOC);
 </section>
 
 <!-- Promotions & Discounts -->
-<section class="section promotions-section">
+<section id="promo" class="section promotions-section">
   <div class="container">
     <h2 class="section-title">Promotions & Discounts</h2>
     <ul class="promotions-list">
@@ -152,7 +152,7 @@ $all_products = $stmt_all->fetchAll(PDO::FETCH_ASSOC);
 </section>
 
 <!-- Customer Reviews -->
-<section class="section reviews-section">
+<section id="reviews" class="section reviews-section">
   <div class="container">
     <h2 class="section-title">What Our Customers Say</h2>
     <div class="reviews-list">
@@ -179,7 +179,7 @@ $all_products = $stmt_all->fetchAll(PDO::FETCH_ASSOC);
 </section>
 
 <!-- Contact Us -->
-<section class="contact-us section">
+<section id="contact" class="contact-us section">
   <div class="container contact-container">
     <div class="map-container">
       <iframe 
