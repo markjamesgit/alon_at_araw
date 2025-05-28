@@ -1,4 +1,3 @@
-/* General Layout */
 body {
   background-color: var(--background);
   color: var(--text-color);
@@ -88,24 +87,14 @@ body {
 
 .product-slider {
   display: flex;
-  gap: 24px;
+  gap: 20px;
   overflow-x: auto;
   scroll-behavior: smooth;
-  padding-bottom: 10px;
+
 }
 
 .product-slider::-webkit-scrollbar {
   display: none;
-}
-
-.product-slider-fade-left,
-.product-slider-fade-right {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 60px;
-  z-index: 1;
-  pointer-events: none;
 }
 
 .slider-arrow {
@@ -117,7 +106,7 @@ body {
   border: none;
   padding: 10px;
   cursor: pointer;
-  font-size: 18px;
+  font-size: 14px;
   transition: background-color 0.2s ease;
 }
 
@@ -138,7 +127,6 @@ body {
   padding: 16px;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 4px 16px rgba(56, 35, 23, 0.08);
   transition: transform 0.3s ease;
   position: relative;
 }
@@ -165,9 +153,6 @@ body {
   font-weight: 600;
   margin-bottom: 8px;
   color: var(--text-dark);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .card-content p {
@@ -183,58 +168,6 @@ body {
   margin-bottom: 16px;
 }
 
-.button-group-actions {
-  display: flex;
-  gap: 10px;
-  margin-top: auto;
-}
-
-.button-group-actions button {
-  flex: 1;
-  padding: 12px 0;
-  font-size: 14px;
-}
-
-.button-group {
-  margin-top: 10px;
-}
-
-.button-group button {
-  width: 100%;
-  padding: 12px 0;
-  font-size: 14px;
-}
-
-.material-btn,
-.material-btn-outline {
-  padding: 10px 16px;
-  font-size: 14px;
-  font-weight: 600;
-  border-radius: 24px;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-  font-family: inherit;
-}
-
-.material-btn {
-  background-color: var(--button-bg);
-  color: white;
-  border: none;
-}
-
-.material-btn:hover {
-  background-color: var(--button-hover);
-}
-
-.material-btn-outline {
-  background-color: transparent;
-  border: 2px solid var(--button-bg);
-  color: var(--button-bg);
-}
-
-.material-btn-outline:hover {
-  background-color: var(--secondary-bg);
-}
 
 /* Best Seller Badge */
 .badge {

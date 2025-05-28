@@ -29,7 +29,6 @@ $all_products = $stmt_all->fetchAll(PDO::FETCH_ASSOC);
   <link rel="icon" type="image/png" href="../../assets/images/logo/logo.png"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-toast-plugin/1.3.2/jquery.toast.min.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
 <?php include '../../includes/customer-header.php'; ?>
@@ -88,18 +87,6 @@ $all_products = $stmt_all->fetchAll(PDO::FETCH_ASSOC);
               <h3><?= htmlspecialchars($row['product_name']) ?></h3>
               <p><?= htmlspecialchars($row['description']) ?></p>
               <span class="price">₱<?= number_format($row['price'], 2) ?></span>
-              <div class="button-group-actions">
-                <button class="material-btn-outline">Order Now</button>
-                <button class="material-btn-outline">Pick Up</button>
-              </div>
-              <div class="button-group">
-                <button 
-                  class="material-btn view-components" 
-                  data-id="<?= $row['product_id'] ?>"
-                  aria-label="Customize <?= htmlspecialchars($row['product_name']) ?>">
-                  Customize
-                </button>
-              </div>
             </div>
           </div>
         <?php endforeach; ?>
@@ -165,16 +152,6 @@ $all_products = $stmt_all->fetchAll(PDO::FETCH_ASSOC);
         <footer>— Juan D.</footer>
       </blockquote>
     </div>
-  </div>
-</section>
-
-
-<!-- Loyalty Program -->
-<section class="section loyalty-section">
-  <div class="container">
-    <h2 class="section-title">Join Our Loyalty Program</h2>
-    <p>Earn points with every purchase and redeem for free drinks and goodies. Sign up today and get 50 bonus points!</p>
-    <button class="material-btn">Sign Up Now</button>
   </div>
 </section>
 
