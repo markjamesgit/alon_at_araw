@@ -1,0 +1,130 @@
+.menu-page {
+    height: 100vh;
+  padding: 2rem;
+}
+
+.breadcrumbs {
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+  color: var(--text-dark);
+}
+.breadcrumbs a {
+  color: var(--primary);
+  text-decoration: none;
+}
+.breadcrumbs span {
+  margin: 0 0.5rem;
+}
+
+.menu-layout {
+  display: flex;
+  gap: 2rem;
+}
+
+/* Left Column */
+.menu-categories {
+  width: 20%;
+  border-right: 1px solid var(--border-color);
+}
+.menu-categories h3 {
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+}
+.menu-categories ul {
+  list-style: none;
+  padding: 0;
+}
+.menu-categories li {
+  margin-bottom: 0.5rem;
+}
+.menu-categories a {
+  text-decoration: none;
+  color: var(--text-dark);
+  padding: 0.5rem;
+  display: block;
+  border-radius: 5px;
+}
+.menu-categories a.active,
+.menu-categories a:hover {
+  color: var(--primary);
+}
+
+/* Right Column */
+.menu-products {
+  flex-grow: 1;
+}
+.menu-products h2 {
+  margin-bottom: 1rem;
+  color: var(--text-dark);
+}
+.products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 4rem;
+}
+.product-card {
+    position: relative;
+  min-width: 250px;
+  max-width: 250px;
+  border-radius: 12px;
+  padding: 14px;
+  overflow: hidden;
+  padding: 1rem;
+  transition: transform 0.2s;
+}
+.product-card:hover {
+  transform: translateY(-4px);
+}
+.product-card img {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+  border-radius: 12px;
+}
+.product-card h4 {
+  margin: 0.5rem 0;
+  font-size: 1rem;
+   color: var(--text-dark);
+}
+.product-card p {
+  font-size: 0.9rem;
+  color: var(--text-dark);
+}
+.product-card .price {
+  display: block;
+  margin-top: 0.5rem;
+  font-weight: bold;
+  color: var(--primary);
+}
+
+.category-card {
+  display: block;
+  text-align: center;
+  border-radius: 12px;
+  overflow: hidden;
+  text-decoration: none;
+  color: var(--text-dark);
+}
+.category-card img {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+  border-radius: 2rem;
+}
+.category-card h4 {
+  padding: 0.75rem;
+  font-size: 1rem;
+}
+
+.badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: var(--highlight);
+  color: var(--text-dark);
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 4px;
+  z-index: 2;
+}

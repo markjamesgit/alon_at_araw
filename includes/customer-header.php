@@ -27,7 +27,6 @@ if (isset($_SESSION['user_id']) && $_SESSION['type'] === 'customer') {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
 </head>
 <body style="padding-top: 60px;">
-<!-- padding-top to prevent content hidden behind fixed header -->
 
 <header class="customer-header" id="customerHeader">
   <!-- Left -->
@@ -49,7 +48,7 @@ if (isset($_SESSION['user_id']) && $_SESSION['type'] === 'customer') {
 
   <!-- Right -->
   <?php if ($customer): ?>
-    <div class="profile-info" id="profileToggle" tabindex="0" aria-haspopup="true" aria-expanded="false" role="button" aria-label="User menu">
+    <div class="profile-info" id="profileToggle" tabindex="0" aria-haspopup="true" aria-expanded="false" role="button" aria-label="User menu">   
       <?php
         $rawPath = $customer['profile_image'] ?? '';
         $cleanPath = preg_replace('#^(\.\./)+#', '', $rawPath);

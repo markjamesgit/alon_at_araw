@@ -76,7 +76,7 @@ $all_products = $stmt_all->fetchAll(PDO::FETCH_ASSOC);
             ? "/alon_at_araw/assets/uploads/products/" . $row['product_image']
             : "/alon_at_araw/assets/images/no-image.png";
         ?>
-          <div class="product-card <?= $row['is_best_seller'] ? 'highlight' : '' ?>" 
+          <a href="product-details.php?id=<?= $row['product_id'] ?>" class="product-card <?= $row['is_best_seller'] ? 'highlight' : '' ?>" 
                data-best="<?= $row['is_best_seller'] ?>" 
                data-category="<?= $row['category_id'] ?>">
             <?php if ($row['is_best_seller']): ?>
@@ -88,7 +88,7 @@ $all_products = $stmt_all->fetchAll(PDO::FETCH_ASSOC);
               <p><?= htmlspecialchars($row['description']) ?></p>
               <span class="price">₱<?= number_format($row['price'], 2) ?></span>
             </div>
-          </div>
+          </a>
         <?php endforeach; ?>
       </div>
       
