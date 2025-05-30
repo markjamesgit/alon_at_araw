@@ -17,9 +17,9 @@
 }
 
 .product-details {
+  height: 100%;
   border-radius: 6px;
   background-color: var(--border-color);
-  margin-bottom: 3rem;
   display: flex;
   flex-wrap: wrap;
   gap: 2rem;
@@ -67,10 +67,6 @@
   font-weight: bold;
   color: var(--primary);
   margin-top: 1rem;
-}
-
-.product-options {
-  margin-top: 3rem;
 }
 
 .product-options h2 {
@@ -215,5 +211,10 @@
   background-color: var(--button-hover);
 }
 
-
+.product-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3rem;
+  align-items: stretch; 
+}
 

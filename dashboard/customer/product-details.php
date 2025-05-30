@@ -84,6 +84,7 @@ foreach ($components as $comp) {
       <span><?= htmlspecialchars($product['product_name']) ?></span>
     </nav>
 
+     <div class="product-grid">
     <!-- Product Info -->
     <section class="product-details">
     <img 
@@ -149,6 +150,7 @@ foreach ($components as $comp) {
     <button type="submit" class="sbx-add-to-cart">Add to Cart</button>
   </section>
 </form>
+</div>
   </main>
 
 <!-- Load jQuery FIRST -->
