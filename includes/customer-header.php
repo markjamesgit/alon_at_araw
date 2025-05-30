@@ -1,12 +1,22 @@
 <?php
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start(); 
+}
 
 $customer = null;
+$cartQty = 0;
+
 if (isset($_SESSION['user_id']) && $_SESSION['type'] === 'customer') {
     require_once __DIR__ . '/../config/db.php';
+
     $stmt = $conn->prepare("SELECT name, profile_image FROM users WHERE id = ?");
     $stmt->execute([$_SESSION['user_id']]);
     $customer = $stmt->fetch();
+
+    // Get cart count
+    $stmt = $conn->prepare("SELECT SUM(quantity) FROM cart WHERE user_id = ?");
+    $stmt->execute([$_SESSION['user_id']]);
+    $cartQty = (int) $stmt->fetchColumn();
 }
 ?>
 <!DOCTYPE html>
@@ -14,7 +24,6 @@ if (isset($_SESSION['user_id']) && $_SESSION['type'] === 'customer') {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Customer Header - Scroll Hide/Show</title>
   <link rel="stylesheet" href="/alon_at_araw/assets/global.css"/>
     <link rel="stylesheet" href="/alon_at_araw/assets/styles/root-customer.css">
     <link rel="stylesheet" href="/alon_at_araw/assets/styles/customer-header.css"/>
@@ -48,6 +57,11 @@ if (isset($_SESSION['user_id']) && $_SESSION['type'] === 'customer') {
 
   <!-- Right -->
   <?php if ($customer): ?>
+    <!-- Cart Icon -->
+  <a href="#" class="cart-icon" id="cartIcon" aria-label="Cart">
+      <i class="fas fa-shopping-cart"></i>
+        <span class="cart-count" id="cartCount"><?= $cartQty ?></span>
+    </a>
     <div class="profile-info" id="profileToggle" tabindex="0" aria-haspopup="true" aria-expanded="false" role="button" aria-label="User menu">   
       <?php
         $rawPath = $customer['profile_image'] ?? '';

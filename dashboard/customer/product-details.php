@@ -60,11 +60,13 @@ foreach ($components as $comp) {
   <link rel="stylesheet" href="/alon_at_araw/assets/global.css">
   <link rel="stylesheet" href="/alon_at_araw/assets/styles/root-customer.css">
   <link rel="stylesheet" href="/alon_at_araw/assets/styles/product-details.css">
+  <link rel="stylesheet" href="/alon_at_araw/assets/styles/cart-sidebar.css">
   <link rel="stylesheet" href="/alon_at_araw/assets/fonts/font.css">
   <link rel="icon" type="image/png" href="../../assets/images/logo/logo.png">
 </head>
 <body>
   <?php include '../../includes/customer-header.php'; ?>
+  <?php include '../../includes/cart-sidebar.php'; ?>
 
   <main class="menu-page">
     <!-- Breadcrumbs -->
@@ -131,8 +133,8 @@ foreach ($components as $comp) {
                 <input 
                   type="number" 
                   name="<?= $type ?>[<?= $item['component_id'] ?>]" 
-                  value="0" 
-                  min="0"
+                  value="1" 
+                  min="1"
                   class="sbx-quantity-input"
                   readonly
                 >
@@ -149,7 +151,94 @@ foreach ($components as $comp) {
 </form>
   </main>
 
+<!-- Load jQuery FIRST -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!-- Load jQuery Toast plugin AFTER jQuery -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-toast-plugin/1.3.2/jquery.toast.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-toast-plugin/1.3.2/jquery.toast.min.js"></script>
+
+
 <script>
+// Handle Add to Cart form with AJAX
+$('form').on('submit', function(e) {
+  e.preventDefault();
+  const form = $(this);
+
+  // Validate cup size (should be handled by 'required' but let's confirm)
+  if (!$('input[name="cup_size"]:checked').length) {
+    $.toast({
+      heading: 'Selection Required',
+      text: 'Please select a cup size.',
+      icon: 'error',
+      position: 'top-right',
+      hideAfter: 3000,
+      stack: false
+    });
+    return; // stop form submission
+  }
+
+  // Validate at least one addon or flavor quantity > 0
+  let addonsSelected = false;
+
+  // Check addons and flavors quantity inputs, they are named addons[...] and flavors[...]
+  // We can check all quantity inputs except cup_size radio group
+  $('.sbx-quantity-input').each(function() {
+    if (parseInt($(this).val(), 10) > 0) {
+      addonsSelected = true;
+      return false; // break out of .each loop
+    }
+  });
+
+  if (!addonsSelected) {
+    $.toast({
+      heading: 'Selection Required',
+      text: 'Please select at least one add-on or flavor.',
+      icon: 'error',
+      position: 'top-right',
+      hideAfter: 2000,
+      stack: false
+    });
+    return; // stop form submission
+  }
+
+  // All good, proceed with AJAX submit
+  const formData = form.serialize();
+
+  $.post('/alon_at_araw/dashboard/customer/order/add-to-cart.php', formData, function(response) {
+    if (response.success) {
+      $('#cartCount').text(response.totalQuantity); // Update cart badge
+      $.toast({
+        heading: 'Added to Cart',
+        text: response.message,
+        icon: 'success',
+        position: 'top-right',
+        hideAfter: 3000,
+        stack: false
+      });
+
+      // Reset form
+      form.trigger('reset'); // Reset hidden fields, radio buttons
+
+      // Manually reset custom quantity UI
+      form.find('.sbx-quantity-input').val(1);
+      form.find('.sbx-cup-option').removeClass('selected');
+      form.find('input[name="cup_size"]').prop('checked', false);
+
+    } else {
+      $.toast({
+        heading: 'Error',
+        text: response.message || 'Something went wrong.',
+        icon: 'error',
+        position: 'top-right',
+        hideAfter: 2000,
+        stack: false
+      });
+    }
+  }, 'json');
+});
+
+
 document.querySelectorAll('.sbx-addons-flavors').forEach(container => {
   const minusBtn = container.querySelector('.sbx-minus');
   const plusBtn = container.querySelector('.sbx-plus');
@@ -166,6 +255,5 @@ document.querySelectorAll('.sbx-addons-flavors').forEach(container => {
   });
 });
 </script>
-
 </body>
 </html>

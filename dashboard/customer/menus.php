@@ -39,12 +39,14 @@ if ($category_id) {
   <link rel="stylesheet" href="/alon_at_araw/assets/global.css">
   <link rel="stylesheet" href="/alon_at_araw/assets/styles/root-customer.css">
   <link rel="stylesheet" href="/alon_at_araw/assets/styles/menus.css">
+  <link rel="stylesheet" href="/alon_at_araw/assets/styles/cart-sidebar.css">
   <link rel="stylesheet" href="/alon_at_araw/assets/fonts/font.css">
   <link rel="icon" type="image/png" href="../../assets/images/logo/logo.png">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
 </head>
 <body>
   <?php include '../../includes/customer-header.php'; ?>
+  <?php include '../../includes/cart-sidebar.php'; ?>
 
   <main class="menu-page">
     <!-- Breadcrumbs -->

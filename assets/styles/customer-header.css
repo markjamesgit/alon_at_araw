@@ -158,8 +158,27 @@ nav.header-nav a:focus {
   transform: rotate(180deg);
 }
 
-@media (max-width: 700px) {
-  nav.header-nav {
-    display: none;
-  }
+.cart-icon {
+  position: relative;
+  margin-right: 1rem;
+  color: var(--text-light);
+  font-size: 1.4rem;
+  text-decoration: none;
 }
+
+.cart-icon .fas.fa-shopping-cart {
+  font-size: 1.5rem;
+}
+
+.cart-count {
+  position: absolute;
+  top: -6px;
+  right: -10px;
+  background-color: var(--primary);
+  color: var(--color-text-primary);
+  border-radius: 50%;
+  padding: 2px 6px;
+  font-size: 0.7rem;
+  font-weight: bold;
+}
+
