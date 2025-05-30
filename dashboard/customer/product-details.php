@@ -207,7 +207,6 @@ $('form').on('submit', function(e) {
 
   $.post('/alon_at_araw/dashboard/customer/order/add-to-cart.php', formData, function(response) {
     if (response.success) {
-      $('#cartCount').text(response.totalQuantity); // Update cart badge
       $.toast({
         heading: 'Added to Cart',
         text: response.message,
@@ -224,7 +223,9 @@ $('form').on('submit', function(e) {
       form.find('.sbx-quantity-input').val(1);
       form.find('.sbx-cup-option').removeClass('selected');
       form.find('input[name="cup_size"]').prop('checked', false);
-
+      $('#cartCount').text(response.totalQuantity); // Update cart badge
+      // Replace cart sidebar content with updated HTML
+    $('#cartSidebarContent').html($(response.cartHtml).find('#cartSidebarContent').html());
     } else {
       $.toast({
         heading: 'Error',

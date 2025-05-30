@@ -68,10 +68,6 @@
   transition: color 0.2s ease;
 }
 
-small {
-  color: var(--text-dark, #382317);
-}
-
 .cart-close-btn:hover,
 .cart-close-btn:focus {
   color: var(--primary, #dd7f29);
@@ -136,8 +132,19 @@ small {
   margin-bottom: 1rem;
 }
 
+.cart-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+  border-top: 1px solid var(--border-color, #ddd);
+  padding-top: 1rem;
+  margin-bottom: 1rem;
+}
+
 /* Checkout button */
-.btn-checkout {
+.btn-checkout, #clearCartBtn {
   background-color: var(--primary, #dd7f29);
   color: white;
   font-weight: 700;
@@ -150,13 +157,81 @@ small {
   font-size: 1.1rem;
 }
 
-.btn-checkout:hover,
-.btn-checkout:focus {
+.btn-checkout, #clearCartBtn:hover,
+.btn-checkout, #clearCartBtn:focus {
   background-color: var(--highlight, #fcc22d);
   outline: none;
 }
 
-/* Optional: body overflow lock when cart open */
 body.cart-open {
   overflow: hidden;
 }
+
+.cart-item-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+
+.cart-item-quantity {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: fit-content;
+  background-color: var(--secondary-bg);
+  padding: 0.4rem 0.6rem;
+  border-radius: 2rem;
+  font-weight: 500;
+  color: var(--text-dark);
+}
+
+.qty-btn {
+  background-color: var(--highlight);
+  color: var(--text-dark);
+  border: none;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.qty-btn:hover {
+  background-color: var(--primary);
+  color: #fff;
+}
+
+.cart-item-price {
+  font-weight: bold;
+  font-size: 1rem;
+  color: var(--text-dark);
+  margin-left: 1rem;
+}
+
+.delete-item-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: #fff0ee;
+  color: #b00020; /* A soft red for delete action */
+  border: 1px solid #f4c2c2;
+  border-radius: 8px;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.delete-item-btn i {
+  font-size: 1.1rem;
+}
+
+.delete-item-btn:hover {
+  background-color: #ffdde0;
+  color: #9b0000;
+}
+

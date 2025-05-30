@@ -32,6 +32,7 @@ if (isset($_SESSION['user_id']) && $_SESSION['type'] === 'customer') {
 
     <link rel="icon" type="image/png" href="../../assets/images/logo/logo.png"/>
 
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-toast-plugin/1.3.2/jquery.toast.min.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
 </head>
