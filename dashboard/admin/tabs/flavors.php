@@ -7,9 +7,10 @@ require_once __DIR__ . '/../../../config/db.php';
 if (isset($_POST['add_flavor'])) {
     $name = trim($_POST['flavor_name']);
     $quantity = trim($_POST['quantity']);
+    $price = trim($_POST['price']);
 
-    $stmt = $conn->prepare("INSERT INTO flavors (flavor_name, quantity) VALUES (?, ?)");
-    $stmt->execute([$name, $quantity]);
+    $stmt = $conn->prepare("INSERT INTO flavors (flavor_name, quantity, price) VALUES (?, ?, ?)");
+    $stmt->execute([$name, $quantity, $price]);
 
     $_SESSION['toast'] = 'added';
     header("Location: /alon_at_araw/dashboard/admin/manage-products.php?tab=flavors");
@@ -20,9 +21,10 @@ if (isset($_POST['edit_flavor'])) {
     $id = $_POST['edit_id'];
     $name = trim($_POST['edit_flavor_name']);
     $quantity = trim($_POST['edit_quantity']);
+    $price = trim($_POST['edit_price']);
 
-    $stmt = $conn->prepare("UPDATE flavors SET flavor_name = ?, quantity = ? WHERE flavor_id = ?");
-    $stmt->execute([$name, $quantity, $id]);
+    $stmt = $conn->prepare("UPDATE flavors SET flavor_name = ?, quantity = ?, price = ? WHERE flavor_id = ?");
+    $stmt->execute([$name, $quantity, $price, $id]);
 
     $_SESSION['toast'] = 'edited';
     header("Location: /alon_at_araw/dashboard/admin/manage-products.php?tab=flavors");
@@ -84,6 +86,11 @@ $flavors = $conn->query("SELECT * FROM flavors ORDER BY flavor_id DESC")->fetchA
         <input type="number" id="quantity" name="quantity" placeholder="Enter quantity" required min="1" />
       </div>
 
+      <div class="input-container">
+        <label for="price">Price</label>
+        <input type="number" id="price" name="price" placeholder="Enter price" required min="1" />
+      </div>
+
       <button type="submit" name="add_flavor" class="md-btn md-btn-primary">Add Flavor</button>
     </form>
   </div>
@@ -110,6 +117,7 @@ $flavors = $conn->query("SELECT * FROM flavors ORDER BY flavor_id DESC")->fetchA
             <th><label class="md-checkbox"><input type="checkbox" id="select-all" /><span></span></label></th>
             <th>#</th>
             <th>Name</th>
+            <th>Price</th>
             <th>Quantity</th>
             <th>Actions</th>
           </tr>
@@ -129,6 +137,7 @@ $flavors = $conn->query("SELECT * FROM flavors ORDER BY flavor_id DESC")->fetchA
                 </td>
                 <td><?= $flavor['flavor_id'] ?></td>
                 <td><?= htmlspecialchars($flavor['flavor_name']) ?></td>
+                <td><?= htmlspecialchars($flavor['price']) ?></td>
                 <td><?= htmlspecialchars($flavor['quantity']) ?></td>
                  <td>
                 <?php if ($isOutOfStock): ?>
@@ -137,6 +146,7 @@ $flavors = $conn->query("SELECT * FROM flavors ORDER BY flavor_id DESC")->fetchA
                     class="custom-edit-btn edit-btn"
                     data-id="<?= $flavor['flavor_id'] ?>"
                     data-name="<?= htmlspecialchars($flavor['flavor_name'], ENT_QUOTES) ?>"
+                    data-price="<?= $flavor['price'] ?>"
                     data-quantity="<?= $flavor['quantity'] ?>"
                     >
                     <i class="fas fa-plus"></i> Add Stock
@@ -147,6 +157,7 @@ $flavors = $conn->query("SELECT * FROM flavors ORDER BY flavor_id DESC")->fetchA
                     class="custom-edit-btn edit-btn"
                     data-id="<?= $flavor['flavor_id'] ?>"
                     data-name="<?= htmlspecialchars($flavor['flavor_name'], ENT_QUOTES) ?>"
+                    data-price="<?= $flavor['price'] ?>"
                     data-quantity="<?= $flavor['quantity'] ?>"
                     >
                     <i class="fas fa-pen"></i> Edit
@@ -196,6 +207,11 @@ $flavors = $conn->query("SELECT * FROM flavors ORDER BY flavor_id DESC")->fetchA
       <div class="input-container">
         <label for="edit_quantity">Quantity</label>
         <input type="number" id="edit_quantity" name="edit_quantity" placeholder="Enter quantity" required min="1" />
+      </div>
+
+      <div class="input-container">
+        <label for="edit_price">Price</label>
+        <input type="number" id="edit_price" name="edit_price" placeholder="Enter price" required min="1" />
       </div>
 
       <div class="modal-actions">
@@ -285,15 +301,17 @@ $flavors = $conn->query("SELECT * FROM flavors ORDER BY flavor_id DESC")->fetchA
     $('.edit-btn').on('click', function () {
       const id = $(this).data('id');
       const name = $(this).data('name');
+      const price = $(this).data('price');
       const quantity = $(this).data('quantity');
 
-      fillEditModal(id, name, quantity);
+      fillEditModal(id, name, price, quantity);
     });
 
     // Fill the edit modal fields and show modal
-    function fillEditModal(id, name, quantity) {
+    function fillEditModal(id, name, price, quantity) {
       $('#edit_id').val(id);
       $('#edit_flavor_name').val(name);
+      $('#edit_price').val(price);
       $('#edit_quantity').val(quantity);
       $('#unblockModal').fadeIn(200);
     }

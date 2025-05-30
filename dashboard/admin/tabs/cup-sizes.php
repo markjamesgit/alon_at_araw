@@ -7,9 +7,10 @@ require_once __DIR__ . '/../../../config/db.php';
 if (isset($_POST['add_cup_size'])) {
     $name = trim($_POST['size_name']);
     $quantity = trim($_POST['quantity']);
+    $price = trim($_POST['price']);
 
-    $stmt = $conn->prepare("INSERT INTO cup_sizes (size_name, quantity) VALUES (?, ?)");
-    $stmt->execute([$name, $quantity]);
+    $stmt = $conn->prepare("INSERT INTO cup_sizes (size_name, quantity, price) VALUES (?, ?, ?)");
+    $stmt->execute([$name, $quantity, $price]);
 
     $_SESSION['toast'] = 'added';
     header("Location: /alon_at_araw/dashboard/admin/manage-products.php?tab=cup-sizes");
@@ -20,9 +21,10 @@ if (isset($_POST['edit_cup_size'])) {
     $id = $_POST['edit_id'];
     $name = trim($_POST['edit_size_name']);
     $quantity = trim($_POST['edit_quantity']);
+    $price = trim($_POST['edit_price']);
 
-    $stmt = $conn->prepare("UPDATE cup_sizes SET size_name = ?, quantity = ? WHERE cup_size_id = ?");
-    $stmt->execute([$name, $quantity, $id]);
+    $stmt = $conn->prepare("UPDATE cup_sizes SET size_name = ?, quantity = ?, price = ? WHERE cup_size_id = ?");
+    $stmt->execute([$name, $quantity, $price, $id]);
 
     $_SESSION['toast'] = 'edited';
     header("Location: /alon_at_araw/dashboard/admin/manage-products.php?tab=cup-sizes");
@@ -84,6 +86,11 @@ $cup_sizes = $conn->query("SELECT * FROM cup_sizes ORDER BY cup_size_id DESC")->
         <input type="number" id="quantity" name="quantity" placeholder="Enter quantity" required min="1" />
       </div>
 
+      <div class="input-container">
+        <label for="price">Price</label>
+        <input type="number" id="price" name="price" placeholder="Enter price" required min="1" />
+      </div>
+
       <button type="submit" name="add_cup_size" class="md-btn md-btn-primary">Add Cup Size</button>
     </form>
   </div>
@@ -110,6 +117,7 @@ $cup_sizes = $conn->query("SELECT * FROM cup_sizes ORDER BY cup_size_id DESC")->
             <th><label class="md-checkbox"><input type="checkbox" id="select-all" /><span></span></label></th>
             <th>#</th>
             <th>Name</th>
+            <th>Price</th>
             <th>Quantity</th>
             <th>Actions</th>
           </tr>
@@ -129,6 +137,7 @@ $cup_sizes = $conn->query("SELECT * FROM cup_sizes ORDER BY cup_size_id DESC")->
                 </td>
                 <td><?= $cup_size['cup_size_id'] ?></td>
                 <td><?= htmlspecialchars($cup_size['size_name']) ?></td>
+                <td><?= htmlspecialchars($cup_size['price']) ?></td>
                 <td><?= htmlspecialchars($cup_size['quantity']) ?></td>
                 <td>
                   <?php if ($isOutOfStock): ?>
@@ -137,6 +146,7 @@ $cup_sizes = $conn->query("SELECT * FROM cup_sizes ORDER BY cup_size_id DESC")->
                     class="custom-edit-btn edit-btn"
                     data-id="<?= $cup_size['cup_size_id'] ?>"
                     data-name="<?= htmlspecialchars($cup_size['size_name'], ENT_QUOTES) ?>"
+                    data-price="<?= $cup_size['price'] ?>"
                     data-quantity="<?= $cup_size['quantity'] ?>"
                     >
                     <i class="fas fa-plus"></i> Add Stock
@@ -147,6 +157,7 @@ $cup_sizes = $conn->query("SELECT * FROM cup_sizes ORDER BY cup_size_id DESC")->
                     class="custom-edit-btn edit-btn"
                     data-id="<?= $cup_size['cup_size_id'] ?>"
                     data-name="<?= htmlspecialchars($cup_size['size_name'], ENT_QUOTES) ?>"
+                    data-price="<?= $cup_size['price'] ?>"
                     data-quantity="<?= $cup_size['quantity'] ?>"
                   >
                     <i class="fas fa-pen"></i> Edit
@@ -196,6 +207,11 @@ $cup_sizes = $conn->query("SELECT * FROM cup_sizes ORDER BY cup_size_id DESC")->
       <div class="input-container">
         <label for="edit_quantity">Quantity</label>
         <input type="number" id="edit_quantity" name="edit_quantity" placeholder="Enter quantity" required min="1" />
+      </div>
+
+      <div class="input-container">
+        <label for="edit_price">Price</label>
+        <input type="number" id="edit_price" name="edit_price" placeholder="Enter price" required min="1" />
       </div>
 
       <div class="modal-actions">
@@ -285,15 +301,17 @@ $cup_sizes = $conn->query("SELECT * FROM cup_sizes ORDER BY cup_size_id DESC")->
     $('.edit-btn').on('click', function () {
       const id = $(this).data('id');
       const name = $(this).data('name');
+      const price = $(this).data('#price');
       const quantity = $(this).data('quantity');
 
-      fillEditModal(id, name, quantity);
+      fillEditModal(id, name, price, quantity);
     });
 
     // Fill the edit modal fields and show modal
-    function fillEditModal(id, name, quantity) {
+    function fillEditModal(id, name, price, quantity) {
       $('#edit_id').val(id);
       $('#edit_size_name').val(name);
+      $('#edit_price').val(price);
       $('#edit_quantity').val(quantity);
       $('#unblockModal').fadeIn(200);
     }

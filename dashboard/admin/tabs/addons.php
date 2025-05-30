@@ -7,9 +7,10 @@ require_once __DIR__ . '/../../../config/db.php';
 if (isset($_POST['add_addon'])) {
     $name = trim($_POST['addon_name']);
     $quantity = trim($_POST['quantity']);
+    $price = trim($_POST['price']);
 
-    $stmt = $conn->prepare("INSERT INTO addons (addon_name, quantity) VALUES (?, ?)");
-    $stmt->execute([$name, $quantity]);
+    $stmt = $conn->prepare("INSERT INTO addons (addon_name, quantity, price) VALUES (?, ?, ?)");
+    $stmt->execute([$name, $quantity, $price]);
 
     $_SESSION['toast'] = 'added';
     header("Location: /alon_at_araw/dashboard/admin/manage-products.php?tab=addons");
@@ -20,9 +21,10 @@ if (isset($_POST['edit_addon'])) {
     $id = $_POST['edit_id'];
     $name = trim($_POST['edit_addon_name']);
     $quantity = trim($_POST['edit_quantity']);
+    $price = trim($_POST['edit_price']);
 
-    $stmt = $conn->prepare("UPDATE addons SET addon_name = ?, quantity = ? WHERE addon_id = ?");
-    $stmt->execute([$name, $quantity, $id]);
+    $stmt = $conn->prepare("UPDATE addons SET addon_name = ?, quantity = ?, price = ? WHERE addon_id = ?");
+    $stmt->execute([$name, $quantity, $price, $id]);
 
     $_SESSION['toast'] = 'edited';
     header("Location: /alon_at_araw/dashboard/admin/manage-products.php?tab=addons");
@@ -84,6 +86,11 @@ $addons = $conn->query("SELECT * FROM addons ORDER BY addon_id DESC")->fetchAll(
         <input type="number" id="quantity" name="quantity" placeholder="Enter quantity" required min="1" />
       </div>
 
+      <div class="input-container">
+        <label for="price">Price</label>
+        <input type="number" id="price" name="price" placeholder="Enter price" required min="1" />
+      </div>
+
       <button type="submit" name="add_addon" class="md-btn md-btn-primary">Add Addon</button>
     </form>
   </div>
@@ -110,6 +117,7 @@ $addons = $conn->query("SELECT * FROM addons ORDER BY addon_id DESC")->fetchAll(
             <th><label class="md-checkbox"><input type="checkbox" id="select-all" /><span></span></label></th>
             <th>#</th>
             <th>Name</th>
+            <th>Price</th>
             <th>Quantity</th>
             <th>Actions</th>
           </tr>
@@ -129,6 +137,7 @@ $addons = $conn->query("SELECT * FROM addons ORDER BY addon_id DESC")->fetchAll(
                 </td>
                 <td><?= $addon['addon_id'] ?></td>
                 <td><?= htmlspecialchars($addon['addon_name']) ?></td>
+                <td><?= htmlspecialchars($addon['price']) ?></td>
                 <td><?= htmlspecialchars($addon['quantity']) ?></td>
                 <td>
                   <?php if ($isOutOfStock): ?>
@@ -137,6 +146,7 @@ $addons = $conn->query("SELECT * FROM addons ORDER BY addon_id DESC")->fetchAll(
                     class="custom-edit-btn edit-btn"
                     data-id="<?= $addon['addon_id'] ?>"
                     data-name="<?= htmlspecialchars($addon['addon_name'], ENT_QUOTES) ?>"
+                    data-price="<?= $addon['price'] ?>"
                     data-quantity="<?= $addon['quantity'] ?>"
                     >
                     <i class="fas fa-plus"></i> Add Stock
@@ -147,6 +157,7 @@ $addons = $conn->query("SELECT * FROM addons ORDER BY addon_id DESC")->fetchAll(
                     class="custom-edit-btn edit-btn"
                     data-id="<?= $addon['addon_id'] ?>"
                     data-name="<?= htmlspecialchars($addon['addon_name'], ENT_QUOTES) ?>"
+                    data-price="<?= $addon['price'] ?>"
                     data-quantity="<?= $addon['quantity'] ?>"
                   >
                     <i class="fas fa-pen"></i> Edit
@@ -196,6 +207,11 @@ $addons = $conn->query("SELECT * FROM addons ORDER BY addon_id DESC")->fetchAll(
       <div class="input-container">
         <label for="edit_quantity">Quantity</label>
         <input type="number" id="edit_quantity" name="edit_quantity" placeholder="Enter quantity" required min="1" />
+      </div>
+
+      <div class="input-container">
+        <label for="edit_price">Price</label>
+        <input type="number" id="edit_price" name="edit_price" placeholder="Enter price" required min="1" />
       </div>
 
       <div class="modal-actions">
@@ -285,15 +301,17 @@ $addons = $conn->query("SELECT * FROM addons ORDER BY addon_id DESC")->fetchAll(
     $('.edit-btn').on('click', function () {
       const id = $(this).data('id');
       const name = $(this).data('name');
+      const price = $(this).data('price');
       const quantity = $(this).data('quantity');
 
-      fillEditModal(id, name, quantity);
+      fillEditModal(id, name, quantity, price);
     });
 
     // Fill the edit modal fields and show modal
-    function fillEditModal(id, name, quantity) {
+    function fillEditModal(id, name, quantity, price) {
       $('#edit_id').val(id);
       $('#edit_addon_name').val(name);
+      $('#edit_price').val(price);
       $('#edit_quantity').val(quantity);
       $('#unblockModal').fadeIn(200);
     }
