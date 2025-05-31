@@ -149,14 +149,15 @@ $(document).ready(function () {
     $('.cart-footer span:last-child').text(`₱${parseFloat(totalPrice).toFixed(2)}`);
   }
 
-  $('.qty-btn').on('click', function () {
+  // Use event delegation for quantity buttons
+  $(document).on('click', '.qty-btn', function () {
     const cartId = $(this).data('id');
     const type = $(this).hasClass('plus') ? 'increase' : 'decrease';
     const $cartItem = $(`.cart-item[data-id="${cartId}"]`);
     const $qtyElem = $cartItem.find('.qty');
 
     $.ajax({
-      url: '/alon_at_araw/dashboard/customer/order/update-cart.php',
+      url: '/alon_at_araw/dashboard/customer/cart/update-cart.php',
       type: 'POST',
       dataType: 'json',
       data: {
@@ -169,7 +170,7 @@ $(document).ready(function () {
             heading: 'Quantity Updated',
             text: 'Item quantity has been updated.',
             icon: 'success',
-            position: 'top-right',
+            position: 'bottom-left',
             hideAfter: 2000,
             stack: false
           });
@@ -182,7 +183,7 @@ $(document).ready(function () {
             heading: 'Error',
             text: data.message || 'Failed to update quantity.',
             icon: 'error',
-            position: 'top-right',
+            position: 'bottom-left',
             hideAfter: 2000,
             stack: false
           });
@@ -191,11 +192,12 @@ $(document).ready(function () {
     });
   });
 
-  $('.delete-item-btn').on('click', function () {
+  // Use event delegation for delete buttons
+  $(document).on('click', '.delete-item-btn', function () {
     const cartId = $(this).data('id');
 
     $.ajax({
-      url: '/alon_at_araw/dashboard/customer/order/delete-cart-item.php',
+      url: '/alon_at_araw/dashboard/customer/cart/delete-cart-item.php',
       type: 'POST',
       dataType: 'json',
       data: { cart_id: cartId },
@@ -205,7 +207,7 @@ $(document).ready(function () {
             heading: 'Item Removed',
             text: 'Item has been removed from your cart.',
             icon: 'info',
-            position: 'top-right',
+            position: 'bottom-left',
             hideAfter: 2000,
             stack: false
           });
@@ -223,7 +225,7 @@ $(document).ready(function () {
   $('#clearCartBtn').on('click', function () {
     if (confirm('Clear all items from cart?')) {
       $.ajax({
-        url: '/alon_at_araw/dashboard/customer/order/clear-cart.php',
+        url: '/alon_at_araw/dashboard/customer/cart/clear-cart.php',
         type: 'POST',
         dataType: 'json',
         success: function (data) {
@@ -232,7 +234,7 @@ $(document).ready(function () {
               heading: 'Cart Cleared',
               text: 'All items removed from your cart.',
               icon: 'warning',
-              position: 'top-right',
+              position: 'bottom-left',
               hideAfter: 2000,
               stack: false
             });

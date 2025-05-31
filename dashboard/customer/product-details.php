@@ -162,6 +162,7 @@ foreach ($components as $comp) {
 
 
 <script>
+
 // Handle Add to Cart form with AJAX
 $('form').on('submit', function(e) {
   e.preventDefault();
@@ -207,14 +208,14 @@ $('form').on('submit', function(e) {
   // All good, proceed with AJAX submit
   const formData = form.serialize();
 
-  $.post('/alon_at_araw/dashboard/customer/order/add-to-cart.php', formData, function(response) {
+  $.post('/alon_at_araw/dashboard/customer/cart/add-to-cart.php', formData, function(response) {
     if (response.success) {
       $.toast({
         heading: 'Added to Cart',
         text: response.message,
         icon: 'success',
-        position: 'top-right',
-        hideAfter: 3000,
+        position: 'bottom-left',
+        hideAfter: 2000,
         stack: false
       });
 
@@ -225,22 +226,38 @@ $('form').on('submit', function(e) {
       form.find('.sbx-quantity-input').val(1);
       form.find('.sbx-cup-option').removeClass('selected');
       form.find('input[name="cup_size"]').prop('checked', false);
-      $('#cartCount').text(response.totalQuantity); // Update cart badge
-      // Replace cart sidebar content with updated HTML
-    $('#cartSidebarContent').html($(response.cartHtml).find('#cartSidebarContent').html());
+      
+      // Update cart badge
+      $('#cartCount').text(response.totalQuantity);
+      
+      // Update cart sidebar content
+      $('#cartSidebarContent').html($(response.cartHtml).find('#cartSidebarContent').html());
+      
+      // Update cart header
+      $('.cart-header h2').text(`Your Cart (${response.totalQuantity})`);
+      
+      // Calculate total price from the updated cart items
+      let totalPrice = 0;
+      $('.cart-item-price').each(function() {
+        const priceText = $(this).text().replace('₱', '').replace(',', '');
+        totalPrice += parseFloat(priceText) || 0;
+      });
+      
+      // Update cart footer
+      $('.cart-footer span:last-child').text(`₱${totalPrice.toFixed(2)}`);
+      
     } else {
       $.toast({
         heading: 'Error',
         text: response.message || 'Something went wrong.',
         icon: 'error',
-        position: 'top-right',
+        position: 'bottom-left',
         hideAfter: 2000,
         stack: false
       });
     }
   }, 'json');
 });
-
 
 document.querySelectorAll('.sbx-addons-flavors').forEach(container => {
   const minusBtn = container.querySelector('.sbx-minus');
