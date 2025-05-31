@@ -49,7 +49,18 @@ if (isset($_POST['delete_selected']) && isset($_POST['selected_ids'])) {
     exit;
 }
 
-$addons = $conn->query("SELECT * FROM addons ORDER BY addon_id DESC")->fetchAll();
+// Pagination settings
+$entries_per_page = isset($_GET['entries']) ? (int)$_GET['entries'] : 10;
+$current_page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+$offset = ($current_page - 1) * $entries_per_page;
+
+// Get total number of records
+$total_records = $conn->query("SELECT COUNT(*) FROM addons")->fetchColumn();
+$total_pages = ceil($total_records / $entries_per_page);
+
+// Fetch addons with pagination
+$addons = $conn->query("SELECT * FROM addons ORDER BY addon_id DESC LIMIT $offset, $entries_per_page")->fetchAll();
+
 ?>
 
 <!DOCTYPE html>
@@ -111,6 +122,23 @@ $addons = $conn->query("SELECT * FROM addons ORDER BY addon_id DESC")->fetchAll(
   <form method="POST">
     <button type="button" id="triggerBulkDelete" class="md-btn danger">Delete Selected</button>
     <div class="table-container">
+      <div class="table-controls">
+        <div class="entries-control">
+            <label>Show 
+                <select id="entriesSelect" onchange="changeEntries(this.value)">
+                    <option value="10" <?= $entries_per_page == 10 ? 'selected' : '' ?>>10</option>
+                    <option value="25" <?= $entries_per_page == 25 ? 'selected' : '' ?>>25</option>
+                    <option value="50" <?= $entries_per_page == 50 ? 'selected' : '' ?>>50</option>
+                    <option value="100" <?= $entries_per_page == 100 ? 'selected' : '' ?>>100</option>
+                </select>
+                entries
+            </label>
+        </div>
+        <div class="table-info">
+            Showing <?= min(($current_page - 1) * $entries_per_page + 1, $total_records) ?> to 
+            <?= min($current_page * $entries_per_page, $total_records) ?> of <?= $total_records ?> entries
+        </div>
+    </div>
       <table class="user-table">
         <thead>
           <tr>
@@ -184,6 +212,50 @@ $addons = $conn->query("SELECT * FROM addons ORDER BY addon_id DESC")->fetchAll(
       </table>
     </div>
   </form>
+
+  <?php if ($total_pages > 1): ?>
+  <div class="pagination-container">
+      <div class="pagination">
+          <?php if ($current_page > 1): ?>
+              <a href="?tab=addons&page=1&entries=<?= $entries_per_page ?>" class="page-link first">
+                  <i class="fas fa-angle-double-left"></i>
+              </a>
+              <a href="?tab=addons&page=<?= $current_page - 1 ?>&entries=<?= $entries_per_page ?>" class="page-link prev">
+                  <i class="fas fa-angle-left"></i>
+              </a>
+          <?php endif; ?>
+
+          <?php
+          $start_page = max(1, $current_page - 2);
+          $end_page = min($total_pages, $current_page + 2);
+
+          if ($start_page > 1) {
+              echo '<span class="page-ellipsis">...</span>';
+          }
+
+          for ($i = $start_page; $i <= $end_page; $i++):
+          ?>
+              <a href="?tab=addons&page=<?= $i ?>&entries=<?= $entries_per_page ?>" 
+                 class="page-link <?= $i === $current_page ? 'active' : '' ?>">
+                  <?= $i ?>
+              </a>
+          <?php endfor; ?>
+
+          <?php if ($end_page < $total_pages): ?>
+              <span class="page-ellipsis">...</span>
+          <?php endif; ?>
+
+          <?php if ($current_page < $total_pages): ?>
+              <a href="?tab=addons&page=<?= $current_page + 1 ?>&entries=<?= $entries_per_page ?>" class="page-link next">
+                  <i class="fas fa-angle-right"></i>
+              </a>
+              <a href="?tab=addons&page=<?= $total_pages ?>&entries=<?= $entries_per_page ?>" class="page-link last">
+                  <i class="fas fa-angle-double-right"></i>
+              </a>
+          <?php endif; ?>
+      </div>
+  </div>
+  <?php endif; ?>
 </main>
 
 <!-- Edit Modal -->
@@ -407,6 +479,13 @@ $addons = $conn->query("SELECT * FROM addons ORDER BY addon_id DESC")->fetchAll(
       }
     });
   });
+
+function changeEntries(value) {
+    const urlParams = new URLSearchParams(window.location.search);
+    urlParams.set('entries', value);
+    urlParams.set('page', 1); // Reset to first page when changing entries
+    window.location.href = window.location.pathname + '?' + urlParams.toString();
+}
 </script>
 </body>
 </html>
