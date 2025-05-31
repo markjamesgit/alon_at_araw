@@ -186,8 +186,22 @@ $offset = ($current_page - 1) * $entries_per_page;
 $total_records = $conn->query("SELECT COUNT(*) FROM product_components")->fetchColumn();
 $total_pages = ceil($total_records / $entries_per_page);
 
-// Fetch product components with pagination
-$product_components = $conn->query("SELECT * FROM product_components ORDER BY id DESC LIMIT $offset, $entries_per_page")->fetchAll(PDO::FETCH_ASSOC);
+// Fetch product components with pagination and global quantities
+$product_components = $conn->query("
+    SELECT 
+        pc.*,
+        CASE 
+            WHEN pc.component_type = 'addons' THEN a.quantity
+            WHEN pc.component_type = 'flavors' THEN f.quantity
+            WHEN pc.component_type = 'cup_sizes' THEN cs.quantity
+        END AS global_quantity
+    FROM product_components pc
+    LEFT JOIN addons a ON pc.component_type = 'addons' AND pc.component_id = a.addon_id
+    LEFT JOIN flavors f ON pc.component_type = 'flavors' AND pc.component_id = f.flavor_id
+    LEFT JOIN cup_sizes cs ON pc.component_type = 'cup_sizes' AND pc.component_id = cs.cup_size_id
+    ORDER BY pc.id DESC 
+    LIMIT $offset, $entries_per_page
+")->fetchAll(PDO::FETCH_ASSOC);
 
 // Fetch product names for mapping
 $product_map = [];
@@ -210,6 +224,42 @@ function getComponentMap($conn, $table, $id_col, $name_col) {
 $cup_size_map = getComponentMap($conn, 'cup_sizes', 'cup_size_id', 'size_name');
 $flavor_map = getComponentMap($conn, 'flavors', 'flavor_id', 'flavor_name');
 $addon_map = getComponentMap($conn, 'addons', 'addon_id', 'addon_name');
+
+// Function to get stock status badge
+function getStockStatusBadge($productQty, $globalQty) {
+    if ($productQty <= 0) {
+        return '<span class="status-badge danger">Out of Stock for this Product</span>';
+    } elseif ($globalQty <= 0) {
+        return '<span class="status-badge warning">Out of Stock (Global)</span>';
+    }
+    return '<span class="status-badge success">In Stock</span>';
+}
+
+// Add CSS for status badges
+echo '
+<style>
+.status-badge {
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+    display: inline-block;
+    margin: 2px;
+}
+.status-badge.success {
+    background-color: #28a745;
+    color: white;
+}
+.status-badge.danger {
+    background-color: #dc3545;
+    color: white;
+}
+.status-badge.warning {
+    background-color: #ffc107;
+    color: black;
+}
+</style>
+';
 
 ?>
 
@@ -313,7 +363,9 @@ $addon_map = getComponentMap($conn, 'addons', 'addon_id', 'addon_name');
             <th>Product Name</th>
             <th>Component Type</th>
             <th>Component Name</th>
-            <th>Quantity</th>
+            <th>Product Stock</th>
+            <th>Global Stock</th>
+            <th>Status</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -321,7 +373,7 @@ $addon_map = getComponentMap($conn, 'addons', 'addon_id', 'addon_name');
           <?php if (count($product_components) > 0): ?>
             <?php foreach ($product_components as $component): ?>
               <?php
-                    $isOutOfStock = !$component['active'];
+                    $isOutOfStock = $component['quantity'] <= 0 || $component['global_quantity'] <= 0;
                     $rowClass = $isOutOfStock ? 'out-of-stock' : '';
                 ?>
               <tr style="background-color: <?= $rowClass === 'out-of-stock' ? '#f0f0f0' : '' ?>" class="<?= $rowClass ?>">
@@ -351,6 +403,8 @@ $addon_map = getComponentMap($conn, 'addons', 'addon_id', 'addon_name');
                         ?>
                     </td>
                 <td><?= htmlspecialchars($component['quantity']) ?></td>
+                <td><?= htmlspecialchars($component['global_quantity']) ?></td>
+                <td><?= getStockStatusBadge($component['quantity'], $component['global_quantity']) ?></td>
                 <td>
                    <?php if ($isOutOfStock): ?>
                      <span class="status-badge disabled">Disabled (Out of Stock)</span>
@@ -379,7 +433,7 @@ $addon_map = getComponentMap($conn, 'addons', 'addon_id', 'addon_name');
             <?php endforeach; ?>
           <?php else: ?>
             <tr>
-              <td colspan="7" class="text-center">
+              <td colspan="9" class="text-center">
                 <p class="no-data-message">No product components found.</p>
               </td>
             </tr>
@@ -695,7 +749,7 @@ $addon_map = getComponentMap($conn, 'addons', 'addon_id', 'addon_name');
         if (match) found = true;
       });
       if (!found) {
-        $('.user-table tbody').append('<tr class="no-found"><td colspan="7">No product component found. Try searching again.</td></tr>');
+        $('.user-table tbody').append('<tr class="no-found"><td colspan="9">No product component found. Try searching again.</td></tr>');
       } else {
         $('.user-table tbody .no-found').remove();
       }
@@ -726,7 +780,7 @@ $addon_map = getComponentMap($conn, 'addons', 'addon_id', 'addon_name');
       $('.table-info').text(`Showing ${visibleCount} filtered entries`);
 
       if (!found) {
-        $('.user-table tbody').append('<tr class="no-found"><td colspan="7" class="text-center">No product components found in this category.</td></tr>');
+        $('.user-table tbody').append('<tr class="no-found"><td colspan="9" class="text-center">No product components found in this category.</td></tr>');
       } else {
         $('.user-table tbody .no-found').remove();
       }

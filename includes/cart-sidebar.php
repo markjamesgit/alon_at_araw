@@ -131,8 +131,12 @@ if (isset($_SESSION['user_id'])) {
   </div>
 
   <div class="cart-actions">
-    <button class="btn-checkout">Proceed to Checkout</button>
-    <button id="clearCartBtn">Clear Cart</button>
+    <?php if (!empty($cart_items)): ?>
+      <button class="btn-checkout">Proceed to Checkout</button>
+      <button id="clearCartBtn">Clear Cart</button>
+    <?php else: ?>
+      <a href="/alon_at_araw/dashboard/customer/menus.php" class="btn-checkout">Start Shopping</a>
+    <?php endif; ?>
   </div>
 </aside>
 
@@ -159,6 +163,43 @@ $(document).ready(function () {
     $('.cart-header h2').text(`Your Cart (${quantity})`);
     $('.cart-footer span:last-child').text(`₱${parseFloat(totalPrice).toFixed(2)}`);
   }
+
+  // Checkout button click handler
+  $('.btn-checkout').on('click', function(e) {
+    if ($(this).text() === 'Proceed to Checkout') {
+      e.preventDefault();
+      // Check if user is logged in
+      $.get('/alon_at_araw/auth/check-auth.php', function(response) {
+        if (response.logged_in) {
+          // Check if cart is empty
+          if ($('.cart-item').length === 0) {
+            $.toast({
+              heading: 'Empty Cart',
+              text: 'Please add items to your cart before checking out.',
+              icon: 'warning',
+              position: 'bottom-left',
+              hideAfter: 3000,
+              stack: false
+            });
+          } else {
+            // Proceed to checkout
+            window.location.href = '/alon_at_araw/dashboard/customer/checkout.php';
+          }
+        } else {
+          // Redirect to login
+          $.toast({
+            heading: 'Login Required',
+            text: 'Please login to proceed with checkout.',
+            icon: 'warning',
+            position: 'bottom-left',
+            hideAfter: 3000,
+            stack: false
+          });
+          window.location.href = '/alon_at_araw/auth/login.php';
+        }
+      }, 'json');
+    }
+  });
 
   // Use event delegation for quantity buttons
   $(document).on('click', '.qty-btn', function () {
@@ -227,6 +268,8 @@ $(document).ready(function () {
           $('#cartCount').text(data.cart_total_quantity); 
           if ($('.cart-item').length === 0) {
             $('.cart-items').html('<p>Your cart is empty.</p>');
+            // Update cart actions
+            $('.cart-actions').html('<a href="/alon_at_araw/dashboard/customer/menus.php" class="btn-checkout">Start Shopping</a>');
           }
         }
       }
@@ -259,6 +302,8 @@ $(document).ready(function () {
           $('.cart-items').html('<p>Your cart is empty.</p>');
           updateCartSummary(0, 0);
           $('#cartCount').text(0);
+          // Update cart actions
+          $('.cart-actions').html('<a href="/alon_at_araw/dashboard/customer/menus.php" class="btn-checkout">Start Shopping</a>');
         }
         $('#clearCartModal').removeClass('show');
       }

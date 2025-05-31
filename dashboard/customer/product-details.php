@@ -26,12 +26,21 @@ if (!$product) {
 
 // Fetch product components
 $component_stmt = $conn->prepare("
-    SELECT pc.component_type, pc.component_id, pc.quantity, pc.active,
-           CASE 
-               WHEN pc.component_type = 'addons' THEN a.addon_name
-               WHEN pc.component_type = 'flavors' THEN f.flavor_name
-               WHEN pc.component_type = 'cup_sizes' THEN cs.size_name
-           END AS component_name
+    SELECT 
+        pc.component_type, 
+        pc.component_id, 
+        pc.quantity as product_component_quantity,
+        pc.active,
+        CASE 
+            WHEN pc.component_type = 'addons' THEN a.addon_name
+            WHEN pc.component_type = 'flavors' THEN f.flavor_name
+            WHEN pc.component_type = 'cup_sizes' THEN cs.size_name
+        END AS component_name,
+        CASE 
+            WHEN pc.component_type = 'addons' THEN a.quantity
+            WHEN pc.component_type = 'flavors' THEN f.quantity
+            WHEN pc.component_type = 'cup_sizes' THEN cs.quantity
+        END AS global_quantity
     FROM product_components pc
     LEFT JOIN addons a ON pc.component_type = 'addons' AND pc.component_id = a.addon_id
     LEFT JOIN flavors f ON pc.component_type = 'flavors' AND pc.component_id = f.flavor_id
@@ -46,7 +55,20 @@ $components = $component_stmt->fetchAll(PDO::FETCH_ASSOC);
 $grouped_components = [];
 foreach ($components as $comp) {
     $type = $comp['component_type'];
+    $isOutOfStock = $comp['product_component_quantity'] <= 0 || $comp['global_quantity'] <= 0;
+    $comp['is_out_of_stock'] = $isOutOfStock;
     $grouped_components[$type][] = $comp;
+}
+
+// Function to display stock status
+function getStockStatus($productComponentQty, $globalQty) {
+    if ($productComponentQty <= 0) {
+        return '<span class="badge badge-danger">Out of Stock for this Product</span>';
+    } elseif ($globalQty <= 0) {
+        return '<span class="badge badge-warning">Out of Stock (Global)</span>';
+    } else {
+        return '<span class="badge badge-success">In Stock</span>';
+    }
 }
 ?>
 
@@ -91,6 +113,45 @@ foreach ($components as $comp) {
 
     input[type="radio"]:disabled + label {
       pointer-events: none;
+    }
+
+    .badge {
+        padding: 5px 10px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: bold;
+    }
+    .badge-success {
+        background-color: #28a745;
+        color: white;
+    }
+    .badge-danger {
+        background-color: #dc3545;
+        color: white;
+    }
+    .badge-warning {
+        background-color: #ffc107;
+        color: black;
+    }
+    .component-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+    .component-table th, .component-table td {
+        padding: 10px;
+        border: 1px solid #ddd;
+        text-align: left;
+    }
+    .component-table th {
+        background-color: #f5f5f5;
+    }
+    .component-section {
+        margin-bottom: 30px;
+    }
+    .component-section h3 {
+        color: #333;
+        margin-bottom: 10px;
     }
   </style>
 </head>
@@ -153,29 +214,29 @@ foreach ($components as $comp) {
                 value="<?= $item['component_id'] ?>" 
                 required 
                 hidden
-                <?= (!$item['active']) ? 'disabled' : '' ?>
+                <?= ($item['is_out_of_stock']) ? 'disabled' : '' ?>
               >
-              <label class="sbx-cup-option <?= (!$item['active']) ? 'disabled' : '' ?>" for="cup_<?= $item['component_id'] ?>">
+              <label class="sbx-cup-option <?= ($item['is_out_of_stock']) ? 'disabled' : '' ?>" for="cup_<?= $item['component_id'] ?>">
                 <?= htmlspecialchars($item['component_name']) ?>
-                <?= (!$item['active']) ? '<span class="unavailable">(Unavailable)</span>' : '' ?>
+                <?= ($item['is_out_of_stock']) ? '<span class="unavailable">(Out of Stock)</span>' : '' ?>
               </label>
             <?php else: ?>
-              <div class="sbx-addons-flavors <?= (!$item['active']) ? 'disabled' : '' ?>" data-id="<?= $item['component_id'] ?>" data-type="<?= $type ?>">
-                <span class="sbx-minus <?= (!$item['active']) ? 'disabled' : '' ?>">−</span>
+              <div class="sbx-addons-flavors <?= ($item['is_out_of_stock']) ? 'disabled' : '' ?>" data-id="<?= $item['component_id'] ?>" data-type="<?= $type ?>">
+                <span class="sbx-minus <?= ($item['is_out_of_stock']) ? 'disabled' : '' ?>">−</span>
                 <span class="sbx-name">
                   <?= htmlspecialchars($item['component_name']) ?>
-                  <?= (!$item['active']) ? '<span class="unavailable">(Unavailable)</span>' : '' ?>
+                  <?= ($item['is_out_of_stock']) ? '<span class="unavailable">(Out of Stock)</span>' : '' ?>
                 </span>
                 <input 
                   type="number" 
                   name="<?= $type ?>[<?= $item['component_id'] ?>]" 
-                  value="<?= (!$item['active']) ? '0' : '1' ?>" 
+                  value="<?= ($item['is_out_of_stock']) ? '0' : '1' ?>" 
                   min="0"
                   class="sbx-quantity-input"
                   readonly
-                  <?= (!$item['active']) ? 'disabled' : '' ?>
+                  <?= ($item['is_out_of_stock']) ? 'disabled' : '' ?>
                 >
-                <span class="sbx-plus <?= (!$item['active']) ? 'disabled' : '' ?>">+</span>
+                <span class="sbx-plus <?= ($item['is_out_of_stock']) ? 'disabled' : '' ?>">+</span>
               </div>
             <?php endif; ?>
           <?php endforeach; ?>
@@ -189,10 +250,9 @@ foreach ($components as $comp) {
 </div>
   </main>
 
-<!-- Load jQuery FIRST -->
+
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
-<!-- Load jQuery Toast plugin AFTER jQuery -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-toast-plugin/1.3.2/jquery.toast.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-toast-plugin/1.3.2/jquery.toast.min.js"></script>
 
