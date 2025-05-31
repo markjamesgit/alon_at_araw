@@ -150,31 +150,25 @@
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   text-align: center;
   text-decoration: none;
 }
 
 .btn-checkout:hover {
   background: var(--button-hover);
-  transform: translateY(-2px);
 }
 
 #clearCartBtn {
   width: 100%;
   padding: 0.75rem;
-  background: var(--danger);
-  color: var(--background);
+  background: var(--secondary-bg);
+  color: var(--button-bg);
   border: none;
   border-radius: 8px;
   font-size: 0.9rem;
   cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-#clearCartBtn:hover {
-  background: var(--danger-dark);
-  transform: translateY(-2px);
+  transition: all 0.2s ease;
 }
 
 /* Disabled state */

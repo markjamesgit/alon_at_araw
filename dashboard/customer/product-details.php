@@ -316,9 +316,7 @@ $('form').on('submit', function(e) {
       });
 
       // Reset form
-      form.trigger('reset'); // Reset hidden fields, radio buttons
-
-      // Manually reset custom quantity UI
+      form.trigger('reset');
       form.find('.sbx-quantity-input').val(1);
       form.find('.sbx-cup-option').removeClass('selected');
       form.find('input[name="cup_size"]').prop('checked', false);
@@ -326,21 +324,63 @@ $('form').on('submit', function(e) {
       // Update cart badge
       $('#cartCount').text(response.totalQuantity);
       
-      // Update cart sidebar content
-      $('#cartSidebarContent').html($(response.cartHtml).find('#cartSidebarContent').html());
+      // Parse the cart HTML response
+      const $cartHtml = $(response.cartHtml);
       
-      // Update cart header
+      // Update cart content
+      $('#cartSidebarContent').html($cartHtml.find('#cartSidebarContent').html());
       $('.cart-header h2').text(`Your Cart (${response.totalQuantity})`);
+      $('.cart-footer span:last-child').text(`₱${$cartHtml.find('.cart-footer span:last-child').text()}`);
       
-      // Calculate total price from the updated cart items
-      let totalPrice = 0;
-      $('.cart-item-price').each(function() {
-        const priceText = $(this).text().replace('₱', '').replace(',', '');
-        totalPrice += parseFloat(priceText) || 0;
-      });
-      
-      // Update cart footer
-      $('.cart-footer span:last-child').text(`₱${totalPrice.toFixed(2)}`);
+      // Update cart actions
+      if (response.totalQuantity > 0) {
+        $('.cart-actions').html(`
+          <button class="btn-checkout">Proceed to Checkout</button>
+          <button id="clearCartBtn">Clear Cart</button>
+        `);
+
+        // Rebind checkout button click handler
+        $('.btn-checkout').off('click').on('click', function(e) {
+          e.preventDefault();
+          // Check if user is logged in
+          $.get('/alon_at_araw/auth/check-auth.php', function(response) {
+            if (response.logged_in) {
+              // Check if cart is empty
+              if ($('.cart-item').length === 0) {
+                $.toast({
+                  heading: 'Empty Cart',
+                  text: 'Please add items to your cart before checking out.',
+                  icon: 'warning',
+                  position: 'bottom-left',
+                  hideAfter: 3000,
+                  stack: false
+                });
+              } else {
+                // Proceed to checkout
+                window.location.href = '/alon_at_araw/dashboard/customer/checkout.php';
+              }
+            } else {
+              // Redirect to login
+              $.toast({
+                heading: 'Login Required',
+                text: 'Please login to proceed with checkout.',
+                icon: 'warning',
+                position: 'bottom-left',
+                hideAfter: 3000,
+                stack: false
+              });
+              window.location.href = '/alon_at_araw/auth/login.php';
+            }
+          }, 'json');
+        });
+
+        // Rebind clear cart button handlers
+        $('#clearCartBtn').off('click').on('click', function() {
+          $('#clearCartModal').addClass('show');
+        });
+      } else {
+        $('.cart-actions').empty();
+      }
       
     } else {
       $.toast({

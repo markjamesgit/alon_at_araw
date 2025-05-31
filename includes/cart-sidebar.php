@@ -134,8 +134,6 @@ if (isset($_SESSION['user_id'])) {
     <?php if (!empty($cart_items)): ?>
       <button class="btn-checkout">Proceed to Checkout</button>
       <button id="clearCartBtn">Clear Cart</button>
-    <?php else: ?>
-      <a href="/alon_at_araw/dashboard/customer/menus.php" class="btn-checkout">Start Shopping</a>
     <?php endif; ?>
   </div>
 </aside>
@@ -268,8 +266,8 @@ $(document).ready(function () {
           $('#cartCount').text(data.cart_total_quantity); 
           if ($('.cart-item').length === 0) {
             $('.cart-items').html('<p>Your cart is empty.</p>');
-            // Update cart actions
-            $('.cart-actions').html('<a href="/alon_at_araw/dashboard/customer/menus.php" class="btn-checkout">Start Shopping</a>');
+            // Update cart actions to be empty
+            $('.cart-actions').empty();
           }
         }
       }
@@ -302,8 +300,8 @@ $(document).ready(function () {
           $('.cart-items').html('<p>Your cart is empty.</p>');
           updateCartSummary(0, 0);
           $('#cartCount').text(0);
-          // Update cart actions
-          $('.cart-actions').html('<a href="/alon_at_araw/dashboard/customer/menus.php" class="btn-checkout">Start Shopping</a>');
+          // Update cart actions to be empty
+          $('.cart-actions').empty();
         }
         $('#clearCartModal').removeClass('show');
       }
