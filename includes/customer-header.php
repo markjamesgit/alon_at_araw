@@ -79,7 +79,7 @@ if (isset($_SESSION['user_id']) && $_SESSION['type'] === 'customer') {
     <nav class="dropdown" id="profileDropdown" role="menu" aria-label="User menu">
       <a href="/alon_at_araw/dashboard/customer/profile-settings.php" role="menuitem">Account Settings</a>
       <a href="/alon_at_araw/dashboard/customer/order-history.php" role="menuitem">Order History</a>
-      <a href="/alon_at_araw/dashboard/customer/favorites.php" role="menuitem">My Favorites</a>
+      <a href="/alon_at_araw/dashboard/customer/purchases.php" role="menuitem">My Purchases</a>
       <a href="/alon_at_araw/auth/logout.php" role="menuitem">Sign Out</a>
     </nav>
   <?php else: ?>
