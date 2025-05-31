@@ -373,41 +373,42 @@ echo '
           <?php if (count($product_components) > 0): ?>
             <?php foreach ($product_components as $component): ?>
               <?php
-                    $isOutOfStock = $component['quantity'] <= 0 || $component['global_quantity'] <= 0;
-                    $rowClass = $isOutOfStock ? 'out-of-stock' : '';
+                    $isGlobalOutOfStock = $component['global_quantity'] <= 0;
+                    $isProductOutOfStock = $component['quantity'] <= 0;
+                    $rowClass = $isGlobalOutOfStock ? 'out-of-stock' : '';
                 ?>
               <tr style="background-color: <?= $rowClass === 'out-of-stock' ? '#f0f0f0' : '' ?>" class="<?= $rowClass ?>">
                 <td>
                   <label class="md-checkbox">
-                    <input type="checkbox" name="selected_ids[]" value="<?= $component['id'] ?>" <?= $isOutOfStock ? 'disabled' : '' ?> /><span></span>
+                    <input type="checkbox" name="selected_ids[]" value="<?= $component['id'] ?>" <?= $isGlobalOutOfStock ? 'disabled' : '' ?> /><span></span>
                   </label>
                 </td>
                 <td><?= $component['id'] ?></td>
                 <td><?= htmlspecialchars($product_map[$component['product_id']] ?? 'Unknown') ?></td>
-                    <td><?= htmlspecialchars($component['component_type']) ?></td>
-                    <td>
-                        <?php
-                            switch ($component['component_type']) {
-                                case 'cup_sizes':
-                                    echo htmlspecialchars($cup_size_map[$component['component_id']] ?? 'Unknown');
-                                    break;
-                                case 'flavors':
-                                    echo htmlspecialchars($flavor_map[$component['component_id']] ?? 'Unknown');
-                                    break;
-                                case 'addons':
-                                    echo htmlspecialchars($addon_map[$component['component_id']] ?? 'Unknown');
-                                    break;
-                                default:
-                                    echo 'Unknown';
-                            }
-                        ?>
-                    </td>
+                <td><?= htmlspecialchars($component['component_type']) ?></td>
+                <td>
+                    <?php
+                        switch ($component['component_type']) {
+                            case 'cup_sizes':
+                                echo htmlspecialchars($cup_size_map[$component['component_id']] ?? 'Unknown');
+                                break;
+                            case 'flavors':
+                                echo htmlspecialchars($flavor_map[$component['component_id']] ?? 'Unknown');
+                                break;
+                            case 'addons':
+                                echo htmlspecialchars($addon_map[$component['component_id']] ?? 'Unknown');
+                                break;
+                            default:
+                                echo 'Unknown';
+                        }
+                    ?>
+                </td>
                 <td><?= htmlspecialchars($component['quantity']) ?></td>
                 <td><?= htmlspecialchars($component['global_quantity']) ?></td>
                 <td><?= getStockStatusBadge($component['quantity'], $component['global_quantity']) ?></td>
                 <td>
-                   <?php if ($isOutOfStock): ?>
-                     <span class="status-badge disabled">Disabled (Out of Stock)</span>
+                   <?php if ($isGlobalOutOfStock): ?>
+                     <span class="status-badge disabled">Disabled (Global Stock Empty)</span>
                    <?php else: ?>  
                   <button
                     type="button"
