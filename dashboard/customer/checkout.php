@@ -8,22 +8,40 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-// Fetch cart items
+// Get selected items from POST data
+$selectedItems = json_decode($_POST['selected_items'] ?? '[]', true);
+
+if (empty($selectedItems)) {
+    // If no items selected, redirect back to cart
+    header('Location: /alon_at_araw/');
+    exit;
+}
+
+// Convert array to string for SQL IN clause
+$placeholders = str_repeat('?,', count($selectedItems) - 1) . '?';
+
+// Fetch only selected cart items
 $stmt = $conn->prepare("
     SELECT c.*, p.product_name, p.product_image, cs.size_name, cs.price as size_price
     FROM cart c
     JOIN products p ON c.product_id = p.product_id
     LEFT JOIN cup_sizes cs ON c.selected_cup_size = cs.cup_size_id
-    WHERE c.user_id = :user_id
+    WHERE c.user_id = ? AND c.cart_id IN ($placeholders)
 ");
-$stmt->execute(['user_id' => $_SESSION['user_id']]);
+
+// Combine user_id with selected cart IDs for the query
+$params = array_merge([$_SESSION['user_id']], $selectedItems);
+$stmt->execute($params);
 $cart_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Calculate total
+// Calculate total for selected items only
 $total_amount = 0;
 foreach ($cart_items as $item) {
     $total_amount += $item['total_price'];
 }
+
+// Store selected items in session for process-order.php
+$_SESSION['checkout_items'] = $selectedItems;
 ?>
 
 <!DOCTYPE html>
@@ -47,62 +65,67 @@ foreach ($cart_items as $item) {
             <!-- Order Summary -->
             <section class="order-summary">
                 <h2>Order Summary</h2>
-                <?php foreach ($cart_items as $item): ?>
-                    <div class="order-item">
-                        <img src="/alon_at_araw/assets/uploads/products/<?= htmlspecialchars($item['product_image']) ?>" 
-                             alt="<?= htmlspecialchars($item['product_name']) ?>">
-                        <div class="item-details">
-                            <h3><?= htmlspecialchars($item['product_name']) ?></h3>
-                            <p class="size">Size: <?= htmlspecialchars($item['size_name']) ?></p>
-                            <?php 
-                            if ($item['selected_addons']) {
-                                $addons = json_decode($item['selected_addons'], true);
-                                if (!empty($addons)) {
-                                    echo '<p class="addons">Add-ons: ';
-                                    $addon_names = [];
-                                    foreach ($addons as $addon_id => $quantity) {
-                                        $stmt = $conn->prepare("SELECT addon_name FROM addons WHERE addon_id = ?");
-                                        $stmt->execute([$addon_id]);
-                                        $addon = $stmt->fetch();
-                                        if ($addon) {
-                                            $addon_names[] = $addon['addon_name'] . " (x$quantity)";
+                <?php if (empty($cart_items)): ?>
+                    <p class="no-items">No items selected for checkout.</p>
+                <?php else: ?>
+                    <?php foreach ($cart_items as $item): ?>
+                        <div class="order-item">
+                            <img src="/alon_at_araw/assets/uploads/products/<?= htmlspecialchars($item['product_image']) ?>" 
+                                 alt="<?= htmlspecialchars($item['product_name']) ?>">
+                            <div class="item-details">
+                                <h3><?= htmlspecialchars($item['product_name']) ?></h3>
+                                <p class="size">Size: <?= htmlspecialchars($item['size_name']) ?></p>
+                                <?php 
+                                if ($item['selected_addons']) {
+                                    $addons = json_decode($item['selected_addons'], true);
+                                    if (!empty($addons)) {
+                                        echo '<p class="addons">Add-ons: ';
+                                        $addon_names = [];
+                                        foreach ($addons as $addon_id => $quantity) {
+                                            $stmt = $conn->prepare("SELECT addon_name FROM addons WHERE addon_id = ?");
+                                            $stmt->execute([$addon_id]);
+                                            $addon = $stmt->fetch();
+                                            if ($addon) {
+                                                $addon_names[] = $addon['addon_name'] . " (x$quantity)";
+                                            }
                                         }
+                                        echo htmlspecialchars(implode(', ', $addon_names));
+                                        echo '</p>';
                                     }
-                                    echo htmlspecialchars(implode(', ', $addon_names));
-                                    echo '</p>';
                                 }
-                            }
 
-                            if ($item['selected_flavors']) {
-                                $flavors = json_decode($item['selected_flavors'], true);
-                                if (!empty($flavors)) {
-                                    echo '<p class="flavors">Flavors: ';
-                                    $flavor_names = [];
-                                    foreach ($flavors as $flavor_id => $quantity) {
-                                        $stmt = $conn->prepare("SELECT flavor_name FROM flavors WHERE flavor_id = ?");
-                                        $stmt->execute([$flavor_id]);
-                                        $flavor = $stmt->fetch();
-                                        if ($flavor) {
-                                            $flavor_names[] = $flavor['flavor_name'] . " (x$quantity)";
+                                if ($item['selected_flavors']) {
+                                    $flavors = json_decode($item['selected_flavors'], true);
+                                    if (!empty($flavors)) {
+                                        echo '<p class="flavors">Flavors: ';
+                                        $flavor_names = [];
+                                        foreach ($flavors as $flavor_id => $quantity) {
+                                            $stmt = $conn->prepare("SELECT flavor_name FROM flavors WHERE flavor_id = ?");
+                                            $stmt->execute([$flavor_id]);
+                                            $flavor = $stmt->fetch();
+                                            if ($flavor) {
+                                                $flavor_names[] = $flavor['flavor_name'] . " (x$quantity)";
+                                            }
                                         }
+                                        echo htmlspecialchars(implode(', ', $flavor_names));
+                                        echo '</p>';
                                     }
-                                    echo htmlspecialchars(implode(', ', $flavor_names));
-                                    echo '</p>';
                                 }
-                            }
-                            ?>
-                            <p class="quantity">Quantity: <?= $item['quantity'] ?></p>
-                            <p class="price">₱<?= number_format($item['total_price'], 2) ?></p>
+                                ?>
+                                <p class="quantity">Quantity: <?= $item['quantity'] ?></p>
+                                <p class="price">₱<?= number_format($item['total_price'], 2) ?></p>
+                            </div>
                         </div>
-                    </div>
-                <?php endforeach; ?>
+                    <?php endforeach; ?>
 
-                <div class="total">
-                    <h3>Total Amount</h3>
-                    <p>₱<?= number_format($total_amount, 2) ?></p>
-                </div>
+                    <div class="total">
+                        <h3>Total Amount</h3>
+                        <p>₱<?= number_format($total_amount, 2) ?></p>
+                    </div>
+                <?php endif; ?>
             </section>
 
+            <?php if (!empty($cart_items)): ?>
             <!-- Checkout Form -->
             <form action="process-order.php" method="POST" class="checkout-form">
                 <h2>Order Details</h2>
@@ -142,6 +165,11 @@ foreach ($cart_items as $item) {
                 
                 <button type="submit" class="place-order-btn">Place Order</button>
             </form>
+            <?php else: ?>
+            <div class="no-items-actions">
+                <a href="/alon_at_araw/" class="back-to-cart">Back to Cart</a>
+            </div>
+            <?php endif; ?>
         </div>
     </main>
 

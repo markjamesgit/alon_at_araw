@@ -81,6 +81,11 @@ if (isset($_SESSION['user_id'])) {
         ];
     }
 }
+
+// Function to format price with commas
+function formatPrice($price) {
+    return number_format($price, 2, '.', ',');
+}
 ?>
 
 <!-- Overlay -->
@@ -89,7 +94,10 @@ if (isset($_SESSION['user_id'])) {
 <!-- Cart Sidebar -->
 <aside class="cart-sidebar" id="cartSidebar">
   <div class="cart-header">
-    <h2>Your Cart (<?= $total_quantity ?>)</h2>
+    <div class="cart-header-left">
+      <input type="checkbox" id="selectAllItems" class="cart-checkbox">
+      <h2>Your Cart (<?= $total_quantity ?>)</h2>
+    </div>
     <button class="cart-close-btn" id="cartCloseBtn">&times;</button>
   </div>
 
@@ -99,6 +107,9 @@ if (isset($_SESSION['user_id'])) {
     <?php else: ?>
       <?php foreach ($cart_items as $item): ?>
         <div class="cart-item" data-id="<?= $item['cart_id'] ?>">
+          <div class="cart-item-checkbox">
+            <input type="checkbox" class="item-checkbox" data-id="<?= $item['cart_id'] ?>">
+          </div>
           <img src="<?= $item['product_image'] ? '/alon_at_araw/assets/uploads/products/' . htmlspecialchars($item['product_image']) : '/alon_at_araw/assets/images/no-image.png' ?>" alt="">
           <div class="cart-item-details">
             <h3><?= htmlspecialchars($item['product_name']) ?></h3>
@@ -115,7 +126,7 @@ if (isset($_SESSION['user_id'])) {
               <span class="qty"><?= $item['quantity'] ?></span>
               <button class="qty-btn plus" data-id="<?= $item['cart_id'] ?>">+</button>
             </div>
-            <div class="cart-item-price">₱<?= number_format($item['total_price'], 2) ?></div>
+            <div class="cart-item-price">₱<?= formatPrice($item['total_price']) ?></div>
             <button class="delete-item-btn" data-id="<?= $item['cart_id'] ?>">
               <i class="fas fa-trash"></i> Delete Item
             </button>
@@ -127,25 +138,26 @@ if (isset($_SESSION['user_id'])) {
 
   <div class="cart-footer">
     <span>Total:</span>
-    <span>₱<?= number_format($total_price, 2) ?></span>
+    <span>₱<?= formatPrice($total_price) ?></span>
   </div>
 
   <div class="cart-actions">
     <?php if (!empty($cart_items)): ?>
-      <button class="btn-checkout">Proceed to Checkout</button>
-      <button id="clearCartBtn">Clear Cart</button>
+      <button class="btn-checkout" disabled>Proceed to Checkout</button>
+      <button id="deleteSelectedBtn" disabled>Delete Selected Items</button>
+      <small class="selection-hint">Select items to checkout or delete</small>
     <?php endif; ?>
   </div>
 </aside>
 
-<!-- Clear Cart Confirmation Modal -->
+<!-- Delete Selected Items Modal -->
 <div id="clearCartModal" class="md-modal-overlay">
   <div class="md-modal">
-    <h3>Clear Cart</h3>
-    <p>Are you sure you want to remove all items from your cart?</p>
+    <h3>Delete Selected Items</h3>
+    <p>Are you sure you want to remove the selected items from your cart?</p>
     <div class="md-modal-actions">
       <button id="cancelClearCart" class="md-btn secondary">Cancel</button>
-      <button id="confirmClearCart" class="md-btn primary">Yes, Clear</button>
+      <button id="confirmClearCart" class="md-btn primary">Yes, Delete</button>
     </div>
   </div>
 </div>
@@ -157,46 +169,129 @@ if (isset($_SESSION['user_id'])) {
 
 <script>
 $(document).ready(function () {
+  function formatPrice(number) {
+    // Remove any existing peso sign and commas before formatting
+    if (typeof number === 'string') {
+      number = parseFloat(number.replace(/[₱,]/g, ''));
+    }
+    // Handle NaN or invalid numbers
+    if (isNaN(number)) {
+      number = 0;
+    }
+    // Format number with commas and 2 decimal places
+    return number.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  }
+
   function updateCartSummary(quantity, totalPrice) {
     $('.cart-header h2').text(`Your Cart (${quantity})`);
-    $('.cart-footer span:last-child').text(`₱${parseFloat(totalPrice).toFixed(2)}`);
+    // Clean and format the total price
+    const cleanTotal = parseFloat(String(totalPrice).replace(/[₱,]/g, ''));
+    $('.cart-footer span:last-child').text(`₱${formatPrice(cleanTotal)}`);
+  }
+
+  function updateSelectedTotal() {
+    let selectedTotal = 0;
+    let selectedCount = 0;
+    
+    $('.item-checkbox:checked').each(function() {
+      const cartId = $(this).data('id');
+      const priceText = $(`.cart-item[data-id="${cartId}"]`).find('.cart-item-price').text();
+      const price = parseFloat(priceText.replace(/[₱,]/g, ''));
+      if (!isNaN(price)) {
+        selectedTotal += price;
+        selectedCount++;
+      }
+    });
+
+    // Update the total display with selected items total
+    if (selectedCount > 0) {
+      const formattedTotal = formatPrice(selectedTotal);
+      $('.cart-footer span:last-child').text(`₱${formattedTotal} (${selectedCount} selected)`);
+      $('.btn-checkout').prop('disabled', false);
+    } else {
+      // Show original total if nothing selected
+      const originalTotal = parseFloat($('.cart-footer span:last-child').data('original-total') || 0);
+      const formattedOriginal = formatPrice(originalTotal);
+      $('.cart-footer span:last-child').text(`₱${formattedOriginal}`);
+      $('.btn-checkout').prop('disabled', true);
+    }
+  }
+
+  // Select All functionality
+  $('#selectAllItems').on('change', function() {
+    const isChecked = $(this).prop('checked');
+    $('.item-checkbox').prop('checked', isChecked);
+    updateDeleteButtonState();
+    updateSelectedTotal();
+  });
+
+  // Individual checkbox change
+  $(document).on('change', '.item-checkbox', function() {
+    updateDeleteButtonState();
+    updateSelectedTotal();
+    
+    // Update select all checkbox
+    const totalCheckboxes = $('.item-checkbox').length;
+    const checkedCheckboxes = $('.item-checkbox:checked').length;
+    $('#selectAllItems').prop('checked', totalCheckboxes === checkedCheckboxes);
+  });
+
+  // Update delete button state
+  function updateDeleteButtonState() {
+    const hasSelectedItems = $('.item-checkbox:checked').length > 0;
+    $('#deleteSelectedBtn').prop('disabled', !hasSelectedItems);
   }
 
   // Checkout button click handler
-  $('.btn-checkout').on('click', function(e) {
-    if ($(this).text() === 'Proceed to Checkout') {
-      e.preventDefault();
-      // Check if user is logged in
-      $.get('/alon_at_araw/auth/check-auth.php', function(response) {
-        if (response.logged_in) {
-          // Check if cart is empty
-          if ($('.cart-item').length === 0) {
-            $.toast({
-              heading: 'Empty Cart',
-              text: 'Please add items to your cart before checking out.',
-              icon: 'warning',
-              position: 'bottom-left',
-              hideAfter: 3000,
-              stack: false
-            });
-          } else {
-            // Proceed to checkout
-            window.location.href = '/alon_at_araw/dashboard/customer/checkout.php';
-          }
-        } else {
-          // Redirect to login
-          $.toast({
-            heading: 'Login Required',
-            text: 'Please login to proceed with checkout.',
-            icon: 'warning',
-            position: 'bottom-left',
-            hideAfter: 3000,
-            stack: false
-          });
-          window.location.href = '/alon_at_araw/auth/login.php';
-        }
-      }, 'json');
+  $(document).on('click', '.btn-checkout', function(e) {
+    e.preventDefault();
+    
+    const selectedItems = $('.item-checkbox:checked').map(function() {
+      return $(this).data('id');
+    }).get();
+
+    if (selectedItems.length === 0) {
+      $.toast({
+        heading: 'Selection Required',
+        text: 'Please select items to checkout',
+        icon: 'warning',
+        position: 'bottom-left',
+        hideAfter: 3000,
+        stack: false
+      });
+      return;
     }
+
+    // Check if user is logged in
+    $.get('/alon_at_araw/auth/check-auth.php', function(response) {
+      if (response.logged_in) {
+        // Proceed directly to checkout with selected items
+        const form = $('<form>', {
+          'method': 'POST',
+          'action': '/alon_at_araw/dashboard/customer/checkout.php'
+        });
+
+        // Add selected items as hidden input
+        $('<input>').attr({
+          'type': 'hidden',
+          'name': 'selected_items',
+          'value': JSON.stringify(selectedItems)
+        }).appendTo(form);
+
+        // Append form to body and submit
+        form.appendTo('body').submit();
+      } else {
+        $.toast({
+          heading: 'Login Required',
+          text: 'Please login to proceed with checkout.',
+          icon: 'warning',
+          position: 'bottom-left',
+          hideAfter: 3000,
+          stack: false
+        });
+        window.location.href = '/alon_at_araw/auth/login.php';
+      }
+    }, 'json');
   });
 
   // Use event delegation for quantity buttons
@@ -224,9 +319,16 @@ $(document).ready(function () {
             hideAfter: 2000,
             stack: false
           });
+          
           $qtyElem.text(data.new_quantity);
-          $cartItem.find('.cart-item-price').text(`₱${parseFloat(data.item_total).toFixed(2)}`);
-          updateCartSummary(data.cart_total_quantity, data.cart_total_price);
+          
+          // Clean and format item price
+          const cleanItemTotal = parseFloat(String(data.item_total).replace(/[₱,]/g, ''));
+          $cartItem.find('.cart-item-price').text(`₱${formatPrice(cleanItemTotal)}`);
+          
+          // Update cart summary with clean total
+          const cleanCartTotal = parseFloat(String(data.cart_total_price).replace(/[₱,]/g, ''));
+          updateCartSummary(data.cart_total_quantity, cleanCartTotal);
           $('#cartCount').text(data.cart_total_quantity);
         } else {
           $.toast({
@@ -274,38 +376,101 @@ $(document).ready(function () {
     });
   });
 
-  $('#clearCartBtn').on('click', function () {
-    $('#clearCartModal').addClass('show');
+  // Delete selected items
+  $('#deleteSelectedBtn').on('click', function() {
+    if ($('.item-checkbox:checked').length > 0) {
+      $('#clearCartModal').css('display', 'flex');
+    }
   });
 
-  $('#cancelClearCart').on('click', function () {
-    $('#clearCartModal').removeClass('show');
+  // Cancel delete
+  $('#cancelClearCart').on('click', function() {
+    $('#clearCartModal').css('display', 'none');
   });
 
-  $('#confirmClearCart').on('click', function () {
+  // Confirm delete selected items
+  $('#confirmClearCart').on('click', function() {
+    const selectedItems = $('.item-checkbox:checked').map(function() {
+      return $(this).data('id');
+    }).get();
+
     $.ajax({
-      url: '/alon_at_araw/dashboard/customer/cart/clear-cart.php',
+      url: '/alon_at_araw/dashboard/customer/cart/delete-cart-items.php',
       type: 'POST',
       dataType: 'json',
-      success: function (data) {
+      data: {
+        cart_ids: selectedItems
+      },
+      success: function(data) {
         if (data.success) {
+          selectedItems.forEach(cartId => {
+            $(`.cart-item[data-id="${cartId}"]`).remove();
+          });
+          
+          updateCartSummary(data.cart_total_quantity, data.cart_total_price);
+          $('#cartCount').text(data.cart_total_quantity);
+          
           $.toast({
-            heading: 'Cart Cleared',
-            text: 'All items removed from your cart.',
-            icon: 'warning',
+            heading: 'Items Deleted',
+            text: 'Selected items have been removed from your cart.',
+            icon: 'success',
             position: 'bottom-left',
             hideAfter: 2000,
             stack: false
           });
-          $('.cart-items').html('<p>Your cart is empty.</p>');
-          updateCartSummary(0, 0);
-          $('#cartCount').text(0);
-          // Update cart actions to be empty
-          $('.cart-actions').empty();
+
+          // Hide modal
+          $('#clearCartModal').css('display', 'none');
+          
+          // If cart is empty, refresh the page
+          if (data.cart_total_quantity === 0) {
+            location.reload();
+          }
+        } else {
+          $.toast({
+            heading: 'Error',
+            text: data.message || 'Failed to delete items.',
+            icon: 'error',
+            position: 'bottom-left',
+            hideAfter: 2000,
+            stack: false
+          });
         }
-        $('#clearCartModal').removeClass('show');
       }
     });
+  });
+
+  // Format all prices on page load
+  function formatAllPrices() {
+    // Format individual item prices
+    $('.cart-item-price').each(function() {
+      const priceText = $(this).text();
+      const cleanPrice = parseFloat(priceText.replace(/[₱,]/g, ''));
+      if (!isNaN(cleanPrice)) {
+        $(this).text(`₱${formatPrice(cleanPrice)}`);
+      }
+    });
+
+    // Format total price
+    const totalPriceElement = $('.cart-footer span:last-child');
+    const totalPriceText = totalPriceElement.text();
+    const cleanTotalPrice = parseFloat(totalPriceText.replace(/[₱,]/g, ''));
+    if (!isNaN(cleanTotalPrice)) {
+      totalPriceElement.text(`₱${formatPrice(cleanTotalPrice)}`);
+    }
+  }
+
+  // Call formatAllPrices on page load
+  formatAllPrices();
+
+  // Bind formatAllPrices to cart updates
+  $(document).on('cartUpdated', formatAllPrices);
+
+  // Close modal when clicking outside
+  $(document).on('click', '.md-modal-overlay', function(e) {
+    if (e.target === this) {
+      $(this).css('display', 'none');
+    }
   });
 
   $('#cartIcon').on('click', function () {
@@ -324,6 +489,37 @@ $(document).ready(function () {
       $('body').removeClass('cart-open');
     }
   });
+
+  // Store original total on page load
+  const originalTotal = parseFloat($('.cart-footer span:last-child').text().replace(/[₱,]/g, ''));
+  $('.cart-footer span:last-child').data('original-total', originalTotal);
+
+  // Initialize button states and totals
+  updateSelectedTotal();
+  updateDeleteButtonState();
 });
 </script>
+
+<style>
+/* Add these styles inline for now, you can move them to cart-sidebar.css later */
+.selection-hint {
+  display: block;
+  text-align: center;
+  color: #666;
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+}
+
+.btn-checkout:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: #999;
+}
+
+.cart-footer span:last-child {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+</style>
 

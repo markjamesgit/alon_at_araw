@@ -258,13 +258,25 @@ function getStockStatus($productComponentQty, $globalQty) {
 
 
 <script>
+// Add this function at the top of your script
+function formatPrice(number) {
+  // Remove any existing peso sign and commas before formatting
+  if (typeof number === 'string') {
+    number = parseFloat(number.replace(/[₱,]/g, ''));
+  }
+  // Handle NaN or invalid numbers
+  if (isNaN(number)) {
+    number = 0;
+  }
+  return number.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
 
 // Handle Add to Cart form with AJAX
 $('form').on('submit', function(e) {
   e.preventDefault();
   const form = $(this);
 
-  // Validate cup size (should be handled by 'required' but let's confirm)
+  // Validate cup size
   if (!$('input[name="cup_size"]:checked').length) {
     $.toast({
       heading: 'Selection Required',
@@ -274,18 +286,15 @@ $('form').on('submit', function(e) {
       hideAfter: 3000,
       stack: false
     });
-    return; // stop form submission
+    return;
   }
 
   // Validate at least one addon or flavor quantity > 0
   let addonsSelected = false;
-
-  // Check addons and flavors quantity inputs, they are named addons[...] and flavors[...]
-  // We can check all quantity inputs except cup_size radio group
   $('.sbx-quantity-input').each(function() {
     if (parseInt($(this).val(), 10) > 0) {
       addonsSelected = true;
-      return false; // break out of .each loop
+      return false;
     }
   });
 
@@ -298,7 +307,7 @@ $('form').on('submit', function(e) {
       hideAfter: 2000,
       stack: false
     });
-    return; // stop form submission
+    return;
   }
 
   // All good, proceed with AJAX submit
@@ -330,13 +339,16 @@ $('form').on('submit', function(e) {
       // Update cart content
       $('#cartSidebarContent').html($cartHtml.find('#cartSidebarContent').html());
       $('.cart-header h2').text(`Your Cart (${response.totalQuantity})`);
-      $('.cart-footer span:last-child').text(`₱${$cartHtml.find('.cart-footer span:last-child').text()}`);
+
+      // Clean and format the total price
+      const totalPrice = parseFloat(response.totalPrice.replace(/[₱,]/g, ''));
+      $('.cart-footer span:last-child').text(`₱${formatPrice(totalPrice)}`);
       
       // Update cart actions
       if (response.totalQuantity > 0) {
         $('.cart-actions').html(`
           <button class="btn-checkout">Proceed to Checkout</button>
-          <button id="clearCartBtn">Clear Cart</button>
+          <button id="deleteSelectedBtn" disabled>Delete Selected Items</button>
         `);
 
         // Rebind checkout button click handler
@@ -374,9 +386,88 @@ $('form').on('submit', function(e) {
           }, 'json');
         });
 
-        // Rebind clear cart button handlers
-        $('#clearCartBtn').off('click').on('click', function() {
-          $('#clearCartModal').addClass('show');
+        // Bind delete selected items functionality
+        $('#deleteSelectedBtn').off('click').on('click', function() {
+          if ($('.item-checkbox:checked').length > 0) {
+            $('#clearCartModal').css('display', 'flex');
+          }
+        });
+
+        // Update delete button state when checkboxes change
+        $(document).on('change', '.item-checkbox', function() {
+          const hasSelectedItems = $('.item-checkbox:checked').length > 0;
+          $('#deleteSelectedBtn').prop('disabled', !hasSelectedItems);
+          
+          // Update select all checkbox
+          const totalCheckboxes = $('.item-checkbox').length;
+          const checkedCheckboxes = $('.item-checkbox:checked').length;
+          $('#selectAllItems').prop('checked', totalCheckboxes === checkedCheckboxes);
+        });
+
+        // Select All functionality
+        $('#selectAllItems').off('change').on('change', function() {
+          const isChecked = $(this).prop('checked');
+          $('.item-checkbox').prop('checked', isChecked);
+          $('#deleteSelectedBtn').prop('disabled', !isChecked);
+        });
+
+        // Cancel delete
+        $('#cancelClearCart').off('click').on('click', function() {
+          $('#clearCartModal').css('display', 'none');
+        });
+
+        // Confirm delete selected items
+        $('#confirmClearCart').off('click').on('click', function() {
+          const selectedItems = $('.item-checkbox:checked').map(function() {
+            return $(this).data('id');
+          }).get();
+
+          $.ajax({
+            url: '/alon_at_araw/dashboard/customer/cart/delete-cart-items.php',
+            type: 'POST',
+            dataType: 'json',
+            data: {
+              cart_ids: selectedItems
+            },
+            success: function(data) {
+              if (data.success) {
+                selectedItems.forEach(cartId => {
+                  $(`.cart-item[data-id="${cartId}"]`).remove();
+                });
+                
+                // Clean and format the total price
+                const cleanTotal = parseFloat(String(data.cart_total_price).replace(/[₱,]/g, ''));
+                $('.cart-footer span:last-child').text(`₱${formatPrice(cleanTotal)}`);
+                $('#cartCount').text(data.cart_total_quantity);
+                
+                $.toast({
+                  heading: 'Items Deleted',
+                  text: 'Selected items have been removed from your cart.',
+                  icon: 'success',
+                  position: 'bottom-left',
+                  hideAfter: 2000,
+                  stack: false
+                });
+
+                // Hide modal
+                $('#clearCartModal').css('display', 'none');
+                
+                // If cart is empty, refresh the page
+                if (data.cart_total_quantity === 0) {
+                  location.reload();
+                }
+              } else {
+                $.toast({
+                  heading: 'Error',
+                  text: data.message || 'Failed to delete items.',
+                  icon: 'error',
+                  position: 'bottom-left',
+                  hideAfter: 2000,
+                  stack: false
+                });
+              }
+            }
+          });
         });
       } else {
         $('.cart-actions').empty();
