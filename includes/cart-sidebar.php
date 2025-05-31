@@ -136,11 +136,22 @@ if (isset($_SESSION['user_id'])) {
   </div>
 </aside>
 
+<!-- Clear Cart Confirmation Modal -->
+<div id="clearCartModal" class="md-modal-overlay">
+  <div class="md-modal">
+    <h3>Clear Cart</h3>
+    <p>Are you sure you want to remove all items from your cart?</p>
+    <div class="md-modal-actions">
+      <button id="cancelClearCart" class="md-btn secondary">Cancel</button>
+      <button id="confirmClearCart" class="md-btn primary">Yes, Clear</button>
+    </div>
+  </div>
+</div>
+
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
 <link href="https://cdnjs.cloudflare.com/ajax/libs/jquery-toast-plugin/1.3.2/jquery.toast.min.css" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-toast-plugin/1.3.2/jquery.toast.min.js"></script>
-
 
 <script>
 $(document).ready(function () {
@@ -223,28 +234,35 @@ $(document).ready(function () {
   });
 
   $('#clearCartBtn').on('click', function () {
-    if (confirm('Clear all items from cart?')) {
-      $.ajax({
-        url: '/alon_at_araw/dashboard/customer/cart/clear-cart.php',
-        type: 'POST',
-        dataType: 'json',
-        success: function (data) {
-          if (data.success) {
-            $.toast({
-              heading: 'Cart Cleared',
-              text: 'All items removed from your cart.',
-              icon: 'warning',
-              position: 'bottom-left',
-              hideAfter: 2000,
-              stack: false
-            });
-            $('.cart-items').html('<p>Your cart is empty.</p>');
-            updateCartSummary(0, 0);
-            $('#cartCount').text(0); 
-          }
+    $('#clearCartModal').addClass('show');
+  });
+
+  $('#cancelClearCart').on('click', function () {
+    $('#clearCartModal').removeClass('show');
+  });
+
+  $('#confirmClearCart').on('click', function () {
+    $.ajax({
+      url: '/alon_at_araw/dashboard/customer/cart/clear-cart.php',
+      type: 'POST',
+      dataType: 'json',
+      success: function (data) {
+        if (data.success) {
+          $.toast({
+            heading: 'Cart Cleared',
+            text: 'All items removed from your cart.',
+            icon: 'warning',
+            position: 'bottom-left',
+            hideAfter: 2000,
+            stack: false
+          });
+          $('.cart-items').html('<p>Your cart is empty.</p>');
+          updateCartSummary(0, 0);
+          $('#cartCount').text(0);
         }
-      });
-    }
+        $('#clearCartModal').removeClass('show');
+      }
+    });
   });
 
   $('#cartIcon').on('click', function () {
