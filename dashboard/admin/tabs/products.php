@@ -6,6 +6,19 @@ require_once __DIR__ . '/../../../config/db.php';
 
 $categories = $conn->query("SELECT * FROM categories ORDER BY id")->fetchAll();
 
+// Handle availability toggle
+if (isset($_POST['toggle_availability'])) {
+    $product_id = $_POST['product_id'];
+    $new_status = $_POST['new_status'];
+    
+    $stmt = $conn->prepare("UPDATE products SET is_available = ? WHERE product_id = ?");
+    $stmt->execute([$new_status, $product_id]);
+    
+    $_SESSION['toast'] = 'availability_updated';
+    header("Location: " . $_SERVER['HTTP_REFERER']);
+    exit;
+}
+
 if (isset($_POST['add_product'])) {
     $name = trim($_POST['product_name']);
     $description = trim($_POST['description']);
@@ -72,11 +85,22 @@ if (isset($_POST['delete_selected']) && isset($_POST['selected_ids'])) {
     exit;
 }
 
+// Pagination settings
+$entries_per_page = isset($_GET['entries']) ? (int)$_GET['entries'] : 10;
+$current_page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+$offset = ($current_page - 1) * $entries_per_page;
+
+// Get total number of records
+$total_records = $conn->query("SELECT COUNT(*) FROM products")->fetchColumn();
+$total_pages = ceil($total_records / $entries_per_page);
+
+// Fetch products with pagination
 $products = $conn->query("
     SELECT p.*, c.name AS category_name 
     FROM products p 
     LEFT JOIN categories c ON p.category_id = c.id 
     ORDER BY p.product_id DESC
+    LIMIT $offset, $entries_per_page
 ")->fetchAll();
 ?>
 
@@ -159,13 +183,31 @@ $products = $conn->query("
   <div class="user-controls">
     <input type="text" id="searchInput" placeholder="Search products..." class="search-input" />
 
-    <div class="filter-dropdown">
-      <select id="filterSelect" class="filter-select">
-        <option value="all">All Categories</option>
-        <?php foreach ($categories as $category): ?>
-          <option value="<?= $category['name'] ?>"><?= htmlspecialchars($category['name']) ?></option>
-        <?php endforeach; ?>
-      </select>
+    <div class="filter-controls">
+      <div class="filter-dropdown">
+        <select id="categoryFilter" class="filter-select">
+          <option value="all">All Categories</option>
+          <?php foreach ($categories as $category): ?>
+            <option value="<?= $category['name'] ?>"><?= htmlspecialchars($category['name']) ?></option>
+          <?php endforeach; ?>
+        </select>
+      </div>
+
+      <div class="filter-dropdown">
+        <select id="availabilityFilter" class="filter-select">
+          <option value="all">All Status</option>
+          <option value="available">Available</option>
+          <option value="not_available">Not Available</option>
+        </select>
+      </div>
+
+      <div class="filter-dropdown">
+        <select id="bestSellerFilter" class="filter-select">
+          <option value="all">All Products</option>
+          <option value="best_seller">Best Sellers</option>
+          <option value="not_best_seller">Not Best Sellers</option>
+        </select>
+      </div>
     </div>
   </div>
 
@@ -173,6 +215,23 @@ $products = $conn->query("
   <form method="POST">
     <button type="button" id="triggerBulkDelete" class="md-btn danger">Delete Selected</button>
     <div class="table-container">
+      <div class="table-controls">
+        <div class="entries-control">
+            <label>Show 
+                <select id="entriesSelect" onchange="changeEntries(this.value)">
+                    <option value="10" <?= $entries_per_page == 10 ? 'selected' : '' ?>>10</option>
+                    <option value="25" <?= $entries_per_page == 25 ? 'selected' : '' ?>>25</option>
+                    <option value="50" <?= $entries_per_page == 50 ? 'selected' : '' ?>>50</option>
+                    <option value="100" <?= $entries_per_page == 100 ? 'selected' : '' ?>>100</option>
+                </select>
+                entries
+            </label>
+        </div>
+        <div class="table-info">
+            Showing <?= min(($current_page - 1) * $entries_per_page + 1, $total_records) ?> to 
+            <?= min($current_page * $entries_per_page, $total_records) ?> of <?= $total_records ?> entries
+        </div>
+    </div>
       <table class="user-table">
         <thead>
           <tr>
@@ -184,16 +243,22 @@ $products = $conn->query("
             <th>Price</th>
             <th>Category</th>
             <th>Best Seller</th>
+            <th>Status</th>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody>
           <?php if (count($products) > 0): ?>
             <?php foreach ($products as $prod): ?>
-              <tr>
+              <?php 
+                $isAvailable = $prod['is_available'] ?? true;
+                $rowClass = !$isAvailable ? 'unavailable-product' : '';
+              ?>
+              <tr class="<?= $rowClass ?>">
                 <td>
                   <label class="md-checkbox">
-                    <input type="checkbox" name="selected_ids[]" value="<?= $prod['product_id'] ?>" /><span></span>
+                    <input type="checkbox" name="selected_ids[]" value="<?= $prod['product_id'] ?>" <?= !$isAvailable ? 'disabled' : '' ?> />
+                    <span></span>
                   </label>
                 </td>
                 <td><?= $prod['product_id'] ?></td>
@@ -204,7 +269,7 @@ $products = $conn->query("
                     $productImagePath = $cleanImage
                       ? '/alon_at_araw/assets/uploads/products/' . $cleanImage
                       : '/alon_at_araw/assets/images/no-image.png';
-                    ?>
+                  ?>
                   <img src="<?= htmlspecialchars($productImagePath) ?>" class="profile-pic" alt="Product Image" />
                 </td>
                 <td><?= htmlspecialchars($prod['product_name']) ?></td>
@@ -213,32 +278,43 @@ $products = $conn->query("
                 <td><?= htmlspecialchars($prod['category_name']) ?></td>
                 <td><?= $prod['is_best_seller'] ? 'Yes' : 'No' ?></td>
                 <td>
-                  <button
-                    type="button"
-                    class="custom-edit-btn edit-btn"
-                    data-id="<?= $prod['product_id'] ?>"
-                    data-name="<?= htmlspecialchars($prod['product_name'], ENT_QUOTES) ?>"
-                    data-description="<?= htmlspecialchars($prod['description'], ENT_QUOTES) ?>"
-                    data-price="<?= $prod['price'] ?>"
-                    data-category="<?= $prod['category_id'] ?>"
-                    data-best_seller="<?= $prod['is_best_seller'] ?>"
-                    data-image="<?= htmlspecialchars($prod['product_image'], ENT_QUOTES) ?>"
+                  <button 
+                    type="button" 
+                    class="status-btn <?= $isAvailable ? 'available' : 'not-available' ?>"
+                    onclick="toggleAvailabilityModal(<?= $prod['product_id'] ?>, <?= $isAvailable ? 'true' : 'false' ?>)"
                   >
-                    <i class="fas fa-pen"></i> Edit
+                    <?= $isAvailable ? 'Available' : 'Not Available' ?>
                   </button>
-                 <button
-                    type="button"
-                    class="custom-delete-btn delete-product"
-                    data-id="<?= $prod['product_id'] ?>"
-                  >
-                    <i class="fas fa-trash"></i> Delete
-                  </button>
-              </td>
+                </td>
+                <td>
+                  <?php if ($isAvailable): ?>
+                    <button
+                      type="button"
+                      class="custom-edit-btn edit-btn"
+                      data-id="<?= $prod['product_id'] ?>"
+                      data-name="<?= htmlspecialchars($prod['product_name'], ENT_QUOTES) ?>"
+                      data-description="<?= htmlspecialchars($prod['description'], ENT_QUOTES) ?>"
+                      data-price="<?= $prod['price'] ?>"
+                      data-category="<?= $prod['category_id'] ?>"
+                      data-best_seller="<?= $prod['is_best_seller'] ?>"
+                      data-image="<?= htmlspecialchars($prod['product_image'], ENT_QUOTES) ?>"
+                    >
+                      <i class="fas fa-pen"></i> Edit
+                    </button>
+                    <button
+                      type="button"
+                      class="custom-delete-btn delete-product"
+                      data-id="<?= $prod['product_id'] ?>"
+                    >
+                      <i class="fas fa-trash"></i> Delete
+                    </button>
+                  <?php endif; ?>
+                </td>
               </tr>
             <?php endforeach; ?>
           <?php else: ?>
             <tr>
-              <td colspan="9" class="text-center">
+              <td colspan="10" class="text-center">
                 <p class="no-data-message">No products found.</p>
               </td>
             </tr>
@@ -247,6 +323,50 @@ $products = $conn->query("
       </table>
     </div>
   </form>
+
+  <?php if ($total_pages > 1): ?>
+  <div class="pagination-container">
+      <div class="pagination">
+          <?php if ($current_page > 1): ?>
+              <a href="?tab=products&page=1&entries=<?= $entries_per_page ?>" class="page-link first">
+                  <i class="fas fa-angle-double-left"></i>
+              </a>
+              <a href="?tab=products&page=<?= $current_page - 1 ?>&entries=<?= $entries_per_page ?>" class="page-link prev">
+                  <i class="fas fa-angle-left"></i>
+              </a>
+          <?php endif; ?>
+
+          <?php
+          $start_page = max(1, $current_page - 2);
+          $end_page = min($total_pages, $current_page + 2);
+
+          if ($start_page > 1) {
+              echo '<span class="page-ellipsis">...</span>';
+          }
+
+          for ($i = $start_page; $i <= $end_page; $i++):
+          ?>
+              <a href="?tab=products&page=<?= $i ?>&entries=<?= $entries_per_page ?>" 
+                 class="page-link <?= $i === $current_page ? 'active' : '' ?>">
+                  <?= $i ?>
+              </a>
+          <?php endfor; ?>
+
+          <?php if ($end_page < $total_pages): ?>
+              <span class="page-ellipsis">...</span>
+          <?php endif; ?>
+
+          <?php if ($current_page < $total_pages): ?>
+              <a href="?tab=products&page=<?= $current_page + 1 ?>&entries=<?= $entries_per_page ?>" class="page-link next">
+                  <i class="fas fa-angle-right"></i>
+              </a>
+              <a href="?tab=products&page=<?= $total_pages ?>&entries=<?= $entries_per_page ?>" class="page-link last">
+                  <i class="fas fa-angle-double-right"></i>
+              </a>
+          <?php endif; ?>
+      </div>
+  </div>
+  <?php endif; ?>
 </main>
 
 <!-- Edit Modal -->
@@ -359,6 +479,40 @@ $products = $conn->query("
       <div class="modal-actions">
         <button type="submit" class="md-btn md-btn-primary">Yes, Delete All</button>
         <button type="button" id="cancelBulkDelete" class="md-btn md-btn-secondary">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Make Available Modal -->
+<div id="makeAvailableModal" class="unblock-modal" style="display:none;">
+  <div class="modal-card">
+    <h2 class="modal-title">Make Product Available</h2>
+    <form method="POST" class="modal-form">
+      <input type="hidden" name="product_id" id="make_available_id">
+      <input type="hidden" name="new_status" value="1">
+      <p>Are you sure you want to make this product available?</p>
+      <p class="modal-subtitle">This will allow customers to view and purchase this product.</p>
+      <div class="modal-actions">
+        <button type="submit" name="toggle_availability" class="md-btn md-btn-primary">Make Available</button>
+        <button type="button" class="md-btn md-btn-secondary" onclick="closeAvailabilityModal('makeAvailableModal')">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Make Unavailable Modal -->
+<div id="makeUnavailableModal" class="unblock-modal" style="display:none;">
+  <div class="modal-card">
+    <h2 class="modal-title">Make Product Unavailable</h2>
+    <form method="POST" class="modal-form">
+      <input type="hidden" name="product_id" id="make_unavailable_id">
+      <input type="hidden" name="new_status" value="0">
+      <p>Are you sure you want to make this product unavailable?</p>
+      <p class="modal-subtitle">This will prevent customers from viewing and purchasing this product.</p>
+      <div class="modal-actions">
+        <button type="submit" name="toggle_availability" class="md-btn md-btn-primary">Make Unavailable</button>
+        <button type="button" class="md-btn md-btn-secondary" onclick="closeAvailabilityModal('makeUnavailableModal')">Cancel</button>
       </div>
     </form>
   </div>
@@ -531,7 +685,28 @@ $products = $conn->query("
       }
     });
 
-        // Toast messages
+    // Availability toggle modal functions
+    window.toggleAvailabilityModal = function(productId, isCurrentlyAvailable) {
+      const modalId = isCurrentlyAvailable ? 'makeUnavailableModal' : 'makeAvailableModal';
+      const inputId = isCurrentlyAvailable ? 'make_unavailable_id' : 'make_available_id';
+      
+      document.getElementById(inputId).value = productId;
+      const modal = document.getElementById(modalId);
+      modal.style.display = 'flex'; // Changed to flex for centering
+    };
+
+    window.closeAvailabilityModal = function(modalId) {
+      document.getElementById(modalId).style.display = 'none';
+    };
+
+    // Close modals when clicking outside
+    $('.unblock-modal').on('click', function(e) {
+      if (e.target === this) {
+        $(this).hide();
+      }
+    });
+
+    // Toast messages
     <?php if (isset($_SESSION['toast'])): ?>
       let toastMessage = '';
       switch ('<?= $_SESSION['toast'] ?>') {
@@ -547,6 +722,9 @@ $products = $conn->query("
         case 'multiple_deleted':
           toastMessage = 'Selected products deleted.';
           break;
+        case 'availability_updated':
+          toastMessage = 'Product availability has been updated.';
+          break;
       }
       $.toast({
         heading: toastMessage.includes('deleted') ? 'Deleted' : 'Success',
@@ -558,7 +736,221 @@ $products = $conn->query("
       });
       <?php unset($_SESSION['toast']); ?>
     <?php endif; ?>
+
+    // Combined filter function
+    function applyFilters() {
+      const categoryFilter = $('#categoryFilter').val().toLowerCase();
+      const availabilityFilter = $('#availabilityFilter').val();
+      const bestSellerFilter = $('#bestSellerFilter').val();
+      const searchText = $('#searchInput').val().toLowerCase();
+      
+      let found = false;
+
+      $('.user-table tbody tr').each(function () {
+        const category = $(this).find('td:eq(6)').text().toLowerCase();
+        const name = $(this).find('td:eq(3)').text().toLowerCase();
+        const description = $(this).find('td:eq(4)').text().toLowerCase();
+        const isAvailable = !$(this).hasClass('unavailable-product');
+        const isBestSeller = $(this).find('td:eq(7)').text().trim() === 'Yes';
+
+        const matchCategory = categoryFilter === 'all' || category === categoryFilter;
+        const matchAvailability = availabilityFilter === 'all' || 
+                               (availabilityFilter === 'available' && isAvailable) || 
+                               (availabilityFilter === 'not_available' && !isAvailable);
+        const matchBestSeller = bestSellerFilter === 'all' || 
+                              (bestSellerFilter === 'best_seller' && isBestSeller) || 
+                              (bestSellerFilter === 'not_best_seller' && !isBestSeller);
+        const matchSearch = name.includes(searchText) || description.includes(searchText);
+
+        const showRow = matchCategory && matchAvailability && matchBestSeller && matchSearch;
+        $(this).toggle(showRow);
+
+        if (showRow) found = true;
+      });
+
+      if (!found) {
+        $('.user-table tbody .no-found').remove();
+        $('.user-table tbody').append('<tr class="no-found"><td colspan="10" class="text-center">No products found with the selected filters.</td></tr>');
+      } else {
+        $('.user-table tbody .no-found').remove();
+      }
+    }
+
+    // Attach filter function to all filter changes
+    $('#categoryFilter, #availabilityFilter, #bestSellerFilter').on('change', applyFilters);
+    $('#searchInput').on('keyup', applyFilters);
+
+    // Entries per page change handler
+    function changeEntries(value) {
+        const urlParams = new URLSearchParams(window.location.search);
+        urlParams.set('entries', value);
+        urlParams.set('page', 1); // Reset to first page when changing entries
+        window.location.href = window.location.pathname + '?' + urlParams.toString();
+    }
   });
 </script>
+
+<style>
+/* Modal Styles */
+.unblock-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-card {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 500px;
+    position: relative;
+    animation: modalFadeIn 0.3s ease-out;
+}
+
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal-title {
+    margin: 0 0 1.5rem 0;
+    color: #333;
+    font-size: 1.5rem;
+}
+
+.modal-subtitle {
+    color: #666;
+    font-size: 0.9rem;
+    margin: 0.5rem 0 1.5rem 0;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.filter-controls {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.unavailable-product {
+    background-color: #f5f5f5;
+    opacity: 0.7;
+}
+
+.unavailable-product td:not(:nth-child(9)) {
+    pointer-events: none;
+}
+
+.status-btn {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.status-btn.available {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.status-btn.not-available {
+    background-color: #f44336;
+    color: white;
+}
+
+.table-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+}
+
+.entries-control {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.entries-control select {
+    padding: 0.4rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin: 0 0.3rem;
+}
+
+.table-info {
+    color: #666;
+}
+
+.pagination-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 2rem;
+}
+
+.pagination {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: white;
+    padding: 0.5rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.page-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    height: 32px;
+    padding: 0 0.5rem;
+    border-radius: 6px;
+    color: #666;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.page-link:hover {
+    background: #f5f5f5;
+    color: #333;
+}
+
+.page-link.active {
+    background: var(--color-primary);
+    color: white;
+}
+
+.page-ellipsis {
+    color: #666;
+    padding: 0 0.3rem;
+}
+
+.first, .last, .prev, .next {
+    font-size: 0.8rem;
+}
+</style>
 </body>
 </html>

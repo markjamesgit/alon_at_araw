@@ -93,20 +93,32 @@ if ($category_id) {
     <h2><?= htmlspecialchars($category_name) ?></h2>
     <div class="products-grid">
       <?php if ($products): ?>
-        <?php foreach ($products as $product): ?>
-          <a href="product-details.php?id=<?= $product['product_id'] ?>" class="product-card <?= $product['is_best_seller'] ? 'highlight' : '' ?>">
-            <?php if ($product['is_best_seller']): ?>
-              <span class="badge">Best Seller</span>
-            <?php endif; ?>
-            <img 
-              src="<?= $product['product_image'] ? '/alon_at_araw/assets/uploads/products/' . htmlspecialchars($product['product_image']) : '/alon_at_araw/assets/images/no-image.png' ?>"  
-              alt="<?= htmlspecialchars($product['product_name']) ?>">
-            <div class="card-content">
-              <h4><?= htmlspecialchars($product['product_name']) ?></h4>
-              <p><?= htmlspecialchars($product['description']) ?></p>
-              <span class="price">₱<?= number_format($product['price'], 2) ?></span>
-            </div>
-          </a>
+        <?php foreach ($products as $product): 
+          $isAvailable = $product['is_available'] ?? true;
+        ?>
+          <div class="product-card-wrapper <?= !$isAvailable ? 'unavailable' : '' ?>"
+               data-product-id="<?= $product['product_id'] ?>"
+               data-available="<?= $isAvailable ? 'true' : 'false' ?>">
+            <a href="<?= $isAvailable ? 'product-details.php?id=' . $product['product_id'] : 'javascript:void(0);' ?>" 
+               class="product-card <?= $product['is_best_seller'] ? 'highlight' : '' ?>">
+              <?php if ($product['is_best_seller']): ?>
+                <span class="badge">Best Seller</span>
+              <?php endif; ?>
+              <?php if (!$isAvailable): ?>
+                <div class="unavailable-overlay">
+                  <span>Not Available</span>
+                </div>
+              <?php endif; ?>
+              <img 
+                src="<?= $product['product_image'] ? '/alon_at_araw/assets/uploads/products/' . htmlspecialchars($product['product_image']) : '/alon_at_araw/assets/images/no-image.png' ?>"  
+                alt="<?= htmlspecialchars($product['product_name']) ?>">
+              <div class="card-content">
+                <h4><?= htmlspecialchars($product['product_name']) ?></h4>
+                <p><?= htmlspecialchars($product['description']) ?></p>
+                <span class="price">₱<?= number_format($product['price'], 2) ?></span>
+              </div>
+            </a>
+          </div>
         <?php endforeach; ?>
       <?php else: ?>
         <p>No products found in this category.</p>
@@ -116,5 +128,26 @@ if ($category_id) {
 </section>
     </div>
   </main>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-toast-plugin/1.3.2/jquery.toast.min.js"></script>
+
+<script>
+$(document).ready(function() {
+  $('.product-card-wrapper').on('click', function(e) {
+    if ($(this).data('available') === false) {
+      e.preventDefault();
+      $.toast({
+        heading: 'Not Available',
+        text: 'Sorry, this product is currently not available.',
+        icon: 'warning',
+        position: 'top-right',
+        showHideTransition: 'slide',
+        hideAfter: 3000
+      });
+    }
+  });
+});
+</script>
 </body>
 </html>

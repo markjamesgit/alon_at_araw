@@ -59,7 +59,7 @@ $all_products = $stmt_all->fetchAll(PDO::FETCH_ASSOC);
       <div class="about-text">
         <h2 class="section-title">More than Coffee</h2>
         <p>
-          At Alon at Araw, every cup is a reflection of passion and care. Whether you’re catching up with friends or enjoying a moment to yourself, we’re here to make it warm, rich, and memorable — one sip at a time.
+          At Alon at Araw, every cup is a reflection of passion and care. Whether you're catching up with friends or enjoying a moment to yourself, we're here to make it warm, rich, and memorable — one sip at a time.
         </p>
       </div>
     </div>
@@ -77,20 +77,31 @@ $all_products = $stmt_all->fetchAll(PDO::FETCH_ASSOC);
           $image = $row['product_image'] 
             ? "/alon_at_araw/assets/uploads/products/" . $row['product_image']
             : "/alon_at_araw/assets/images/no-image.png";
+          $isAvailable = $row['is_available'] ?? true;
         ?>
-          <a href="product-details.php?id=<?= $row['product_id'] ?>" class="product-card <?= $row['is_best_seller'] ? 'highlight' : '' ?>" 
+          <div class="product-card-wrapper <?= !$isAvailable ? 'unavailable' : '' ?>" 
+               data-product-id="<?= $row['product_id'] ?>"
+               data-available="<?= $isAvailable ? 'true' : 'false' ?>">
+            <a href="<?= $isAvailable ? 'product-details.php?id=' . $row['product_id'] : 'javascript:void(0);' ?>" 
+               class="product-card <?= $row['is_best_seller'] ? 'highlight' : '' ?>" 
                data-best="<?= $row['is_best_seller'] ?>" 
                data-category="<?= $row['category_id'] ?>">
-            <?php if ($row['is_best_seller']): ?>
-              <span class="badge">Best Seller</span>
-            <?php endif; ?>
-            <img src="<?= $image ?>" alt="<?= htmlspecialchars($row['product_name']) ?>">
-            <div class="card-content">
-              <h3><?= htmlspecialchars($row['product_name']) ?></h3>
-              <p><?= htmlspecialchars($row['description']) ?></p>
-              <span class="price">₱<?= number_format($row['price'], 2) ?></span>
-            </div>
-          </a>
+              <?php if ($row['is_best_seller']): ?>
+                <span class="badge">Best Seller</span>
+              <?php endif; ?>
+              <?php if (!$isAvailable): ?>
+                <div class="unavailable-overlay">
+                  <span>Not Available</span>
+                </div>
+              <?php endif; ?>
+              <img src="<?= $image ?>" alt="<?= htmlspecialchars($row['product_name']) ?>">
+              <div class="card-content">
+                <h3><?= htmlspecialchars($row['product_name']) ?></h3>
+                <p><?= htmlspecialchars($row['description']) ?></p>
+                <span class="price">₱<?= number_format($row['price'], 2) ?></span>
+              </div>
+            </a>
+          </div>
         <?php endforeach; ?>
       </div>
       
@@ -146,11 +157,11 @@ $all_products = $stmt_all->fetchAll(PDO::FETCH_ASSOC);
     <h2 class="section-title">What Our Customers Say</h2>
     <div class="reviews-list">
       <blockquote>
-        <p>“The best coffee experience in town! Always fresh and delicious.”</p>
+        <p>"The best coffee experience in town! Always fresh and delicious."</p>
         <footer>— Maria L.</footer>
       </blockquote>
       <blockquote>
-        <p>“I love the cozy ambiance and friendly staff. Highly recommend!”</p>
+        <p>"I love the cozy ambiance and friendly staff. Highly recommend!"</p>
         <footer>— Juan D.</footer>
       </blockquote>
     </div>
@@ -173,7 +184,7 @@ $all_products = $stmt_all->fetchAll(PDO::FETCH_ASSOC);
       ></iframe>
     </div>
     <form class="contact-form">
-      <h2 class="section-title">Let’s Connect</h2>
+      <h2 class="section-title">Let's Connect</h2>
       <input type="text" placeholder="Your Name" required>
       <input type="email" placeholder="Your Email" required>
       <textarea rows="4" placeholder="Your Message" required></textarea>
@@ -184,14 +195,34 @@ $all_products = $stmt_all->fetchAll(PDO::FETCH_ASSOC);
 
 </main>
 
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-toast-plugin/1.3.2/jquery.toast.min.js"></script>
+
 <script>
   const slider = document.querySelector('.product-slider');
-document.querySelector('.slider-arrow.left').addEventListener('click', () => {
-  slider.scrollBy({ left: -300, behavior: 'smooth' });
-});
-document.querySelector('.slider-arrow.right').addEventListener('click', () => {
-  slider.scrollBy({ left: 300, behavior: 'smooth' });
-});
+  document.querySelector('.slider-arrow.left').addEventListener('click', () => {
+    slider.scrollBy({ left: -300, behavior: 'smooth' });
+  });
+  document.querySelector('.slider-arrow.right').addEventListener('click', () => {
+    slider.scrollBy({ left: 300, behavior: 'smooth' });
+  });
+
+  // Handle clicks on unavailable products
+  $(document).ready(function() {
+    $('.product-card-wrapper').on('click', function(e) {
+      if ($(this).data('available') === false) {
+        e.preventDefault();
+        $.toast({
+          heading: 'Not Available',
+          text: 'Sorry, this product is currently not available.',
+          icon: 'warning',
+          position: 'top-right',
+          showHideTransition: 'slide',
+          hideAfter: 3000
+        });
+      }
+    });
+  });
 </script>
 </body>
 </html>
