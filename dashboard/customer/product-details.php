@@ -26,7 +26,7 @@ if (!$product) {
 
 // Fetch product components
 $component_stmt = $conn->prepare("
-    SELECT pc.component_type, pc.component_id, pc.quantity,
+    SELECT pc.component_type, pc.component_id, pc.quantity, pc.active,
            CASE 
                WHEN pc.component_type = 'addons' THEN a.addon_name
                WHEN pc.component_type = 'flavors' THEN f.flavor_name
@@ -63,6 +63,36 @@ foreach ($components as $comp) {
   <link rel="stylesheet" href="/alon_at_araw/assets/styles/cart-sidebar.css">
   <link rel="stylesheet" href="/alon_at_araw/assets/fonts/font.css">
   <link rel="icon" type="image/png" href="../../assets/images/logo/logo.png">
+  
+  <style>
+    .sbx-cup-option.disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      background-color: #f0f0f0;
+    }
+
+    .sbx-addons-flavors.disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      background-color: #f0f0f0;
+    }
+
+    .sbx-addons-flavors.disabled .sbx-minus,
+    .sbx-addons-flavors.disabled .sbx-plus {
+      pointer-events: none;
+      background-color: #ddd;
+    }
+
+    .unavailable {
+      color: #ff4444;
+      font-size: 0.8em;
+      margin-left: 5px;
+    }
+
+    input[type="radio"]:disabled + label {
+      pointer-events: none;
+    }
+  </style>
 </head>
 <body>
   <?php include '../../includes/customer-header.php'; ?>
@@ -123,23 +153,29 @@ foreach ($components as $comp) {
                 value="<?= $item['component_id'] ?>" 
                 required 
                 hidden
+                <?= (!$item['active']) ? 'disabled' : '' ?>
               >
-              <label class="sbx-cup-option" for="cup_<?= $item['component_id'] ?>">
+              <label class="sbx-cup-option <?= (!$item['active']) ? 'disabled' : '' ?>" for="cup_<?= $item['component_id'] ?>">
                 <?= htmlspecialchars($item['component_name']) ?>
+                <?= (!$item['active']) ? '<span class="unavailable">(Unavailable)</span>' : '' ?>
               </label>
             <?php else: ?>
-              <div class="sbx-addons-flavors" data-id="<?= $item['component_id'] ?>" data-type="<?= $type ?>">
-                <span class="sbx-minus">−</span>
-                <span class="sbx-name"><?= htmlspecialchars($item['component_name']) ?></span>
+              <div class="sbx-addons-flavors <?= (!$item['active']) ? 'disabled' : '' ?>" data-id="<?= $item['component_id'] ?>" data-type="<?= $type ?>">
+                <span class="sbx-minus <?= (!$item['active']) ? 'disabled' : '' ?>">−</span>
+                <span class="sbx-name">
+                  <?= htmlspecialchars($item['component_name']) ?>
+                  <?= (!$item['active']) ? '<span class="unavailable">(Unavailable)</span>' : '' ?>
+                </span>
                 <input 
                   type="number" 
                   name="<?= $type ?>[<?= $item['component_id'] ?>]" 
-                  value="1" 
-                  min="1"
+                  value="<?= (!$item['active']) ? '0' : '1' ?>" 
+                  min="0"
                   class="sbx-quantity-input"
                   readonly
+                  <?= (!$item['active']) ? 'disabled' : '' ?>
                 >
-                <span class="sbx-plus">+</span>
+                <span class="sbx-plus <?= (!$item['active']) ? 'disabled' : '' ?>">+</span>
               </div>
             <?php endif; ?>
           <?php endforeach; ?>
@@ -260,6 +296,9 @@ $('form').on('submit', function(e) {
 });
 
 document.querySelectorAll('.sbx-addons-flavors').forEach(container => {
+  // Skip if the container is disabled
+  if (container.classList.contains('disabled')) return;
+
   const minusBtn = container.querySelector('.sbx-minus');
   const plusBtn = container.querySelector('.sbx-plus');
   const input = container.querySelector('.sbx-quantity-input');
