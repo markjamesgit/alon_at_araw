@@ -61,8 +61,7 @@ $_SESSION['checkout_items'] = $selectedItems;
     <main class="checkout-page">
         <div class="checkout-container">
             <div class="checkout-header">
-                <a href="menus.php" class="back-btn">← Back to Cart</a>
-                <h1>Checkout</h1>
+                <h1 class="checkout-title">Checkout</h1>
             </div>
 
             <!-- Order Summary -->
@@ -71,55 +70,57 @@ $_SESSION['checkout_items'] = $selectedItems;
                 <?php if (empty($cart_items)): ?>
                     <p class="no-items">No items selected for checkout.</p>
                 <?php else: ?>
-                    <?php foreach ($cart_items as $item): ?>
-                        <div class="order-item">
-                            <img src="/alon_at_araw/assets/uploads/products/<?= htmlspecialchars($item['product_image']) ?>" 
-                                 alt="<?= htmlspecialchars($item['product_name']) ?>">
-                            <div class="item-details">
-                                <h3><?= htmlspecialchars($item['product_name']) ?></h3>
-                                <p class="size">Size: <?= htmlspecialchars($item['size_name']) ?></p>
-                                <?php 
-                                if ($item['selected_addons']) {
-                                    $addons = json_decode($item['selected_addons'], true);
-                                    if (!empty($addons)) {
-                                        echo '<p class="addons">Add-ons: ';
-                                        $addon_names = [];
-                                        foreach ($addons as $addon_id => $quantity) {
-                                            $stmt = $conn->prepare("SELECT addon_name FROM addons WHERE addon_id = ?");
-                                            $stmt->execute([$addon_id]);
-                                            $addon = $stmt->fetch();
-                                            if ($addon) {
-                                                $addon_names[] = $addon['addon_name'] . " (x$quantity)";
+                    <div class="order-items-container">
+                        <?php foreach ($cart_items as $item): ?>
+                            <div class="order-item">
+                                <img src="/alon_at_araw/assets/uploads/products/<?= htmlspecialchars($item['product_image']) ?>" 
+                                     alt="<?= htmlspecialchars($item['product_name']) ?>">
+                                <div class="item-details">
+                                    <h3><?= htmlspecialchars($item['product_name']) ?></h3>
+                                    <p class="size">Size: <?= htmlspecialchars($item['size_name']) ?></p>
+                                    <?php 
+                                    if ($item['selected_addons']) {
+                                        $addons = json_decode($item['selected_addons'], true);
+                                        if (!empty($addons)) {
+                                            echo '<p class="addons">Add-ons: ';
+                                            $addon_names = [];
+                                            foreach ($addons as $addon_id => $quantity) {
+                                                $stmt = $conn->prepare("SELECT addon_name FROM addons WHERE addon_id = ?");
+                                                $stmt->execute([$addon_id]);
+                                                $addon = $stmt->fetch();
+                                                if ($addon) {
+                                                    $addon_names[] = $addon['addon_name'] . " (x$quantity)";
+                                                }
                                             }
+                                            echo htmlspecialchars(implode(', ', $addon_names));
+                                            echo '</p>';
                                         }
-                                        echo htmlspecialchars(implode(', ', $addon_names));
-                                        echo '</p>';
                                     }
-                                }
 
-                                if ($item['selected_flavors']) {
-                                    $flavors = json_decode($item['selected_flavors'], true);
-                                    if (!empty($flavors)) {
-                                        echo '<p class="flavors">Flavors: ';
-                                        $flavor_names = [];
-                                        foreach ($flavors as $flavor_id => $quantity) {
-                                            $stmt = $conn->prepare("SELECT flavor_name FROM flavors WHERE flavor_id = ?");
-                                            $stmt->execute([$flavor_id]);
-                                            $flavor = $stmt->fetch();
-                                            if ($flavor) {
-                                                $flavor_names[] = $flavor['flavor_name'] . " (x$quantity)";
+                                    if ($item['selected_flavors']) {
+                                        $flavors = json_decode($item['selected_flavors'], true);
+                                        if (!empty($flavors)) {
+                                            echo '<p class="flavors">Flavors: ';
+                                            $flavor_names = [];
+                                            foreach ($flavors as $flavor_id => $quantity) {
+                                                $stmt = $conn->prepare("SELECT flavor_name FROM flavors WHERE flavor_id = ?");
+                                                $stmt->execute([$flavor_id]);
+                                                $flavor = $stmt->fetch();
+                                                if ($flavor) {
+                                                    $flavor_names[] = $flavor['flavor_name'] . " (x$quantity)";
+                                                }
                                             }
+                                            echo htmlspecialchars(implode(', ', $flavor_names));
+                                            echo '</p>';
                                         }
-                                        echo htmlspecialchars(implode(', ', $flavor_names));
-                                        echo '</p>';
                                     }
-                                }
-                                ?>
-                                <p class="quantity">Quantity: <?= $item['quantity'] ?></p>
-                                <p class="price">₱<?= number_format($item['total_price'], 2) ?></p>
+                                    ?>
+                                    <p class="quantity">Quantity: <?= $item['quantity'] ?></p>
+                                    <p class="price">₱<?= number_format($item['total_price'], 2) ?></p>
+                                </div>
                             </div>
-                        </div>
-                    <?php endforeach; ?>
+                        <?php endforeach; ?>
+                    </div>
 
                     <div class="total">
                         <h3>Total Amount</h3>
@@ -177,7 +178,16 @@ $_SESSION['checkout_items'] = $selectedItems;
                 <input type="hidden" name="payment_method" id="payment_method">
                 <input type="hidden" name="total_amount" value="<?= $total_amount ?>">
                 
-                <button type="submit" class="place-order-btn">Place Order</button>
+                <div class="checkout-actions">
+                <a href="menus.php" class="back-to-cart">
+                    <i class="fas fa-arrow-left"></i>
+                    Back to Cart
+                </a>
+                    <button type="submit" class="place-order-btn">
+                        <i class="fas fa-check"></i>
+                        Place Order
+                    </button>
+                </div>
             </form>
             <?php else: ?>
             <div class="no-items-actions">
