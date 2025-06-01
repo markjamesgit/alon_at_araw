@@ -61,16 +61,30 @@ try {
     $order_id = $conn->lastInsertId();
     error_log("Created order with ID: " . $order_id);
 
-    // Get cart items
+    // Get selected cart items from session
+    if (!isset($_SESSION['checkout_items']) || empty($_SESSION['checkout_items'])) {
+        throw new Exception("No items selected for checkout");
+    }
+
+    // Create placeholders for IN clause
+    $placeholders = str_repeat('?,', count($_SESSION['checkout_items']) - 1) . '?';
+    
+    // Get only selected cart items
     $stmt = $conn->prepare("
         SELECT c.*, p.product_name 
         FROM cart c 
         JOIN products p ON c.product_id = p.product_id 
-        WHERE c.user_id = :user_id
+        WHERE c.user_id = ? AND c.cart_id IN ($placeholders)
     ");
-    $stmt->execute(['user_id' => $_SESSION['user_id']]);
+    
+    // Combine user_id with selected cart IDs
+    $params = array_merge([$_SESSION['user_id']], $_SESSION['checkout_items']);
+    $stmt->execute($params);
     $cart_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    error_log("Found " . count($cart_items) . " items in cart");
+    error_log("Found " . count($cart_items) . " selected items for checkout");
+
+    // Clear checkout items from session after fetching
+    unset($_SESSION['checkout_items']);
 
     // Insert cart items into order_items and deduct quantities
     $stmt = $conn->prepare("
@@ -346,10 +360,13 @@ try {
         error_log("Inserted order item for: " . $item['product_name']);
     }
 
-    // Clear cart
-    $stmt = $conn->prepare("DELETE FROM cart WHERE user_id = :user_id");
-    $stmt->execute(['user_id' => $_SESSION['user_id']]);
-    error_log("Cleared cart for user: " . $_SESSION['user_id']);
+    // Clear only the ordered items from cart
+    $placeholders = str_repeat('?,', count($cart_items) - 1) . '?';
+    $cart_ids = array_column($cart_items, 'cart_id');
+    $stmt = $conn->prepare("DELETE FROM cart WHERE user_id = ? AND cart_id IN ($placeholders)");
+    $params = array_merge([$_SESSION['user_id']], $cart_ids);
+    $stmt->execute($params);
+    error_log("Cleared ordered items from cart for user: " . $_SESSION['user_id']);
 
     // Commit transaction
     $conn->commit();
