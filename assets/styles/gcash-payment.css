@@ -1,0 +1,202 @@
+:root {
+    --gcash-blue: #0057D8;
+    --gcash-light-blue: #E8F1FF;
+    --success-green: #00BFA6;
+    --error-red: #FF5252;
+    --text-primary: #2D3748;
+    --text-secondary: #718096;
+    --surface-color: #FFFFFF;
+    --background-color: #F7FAFC;
+    --border-radius: 16px;
+    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+body {
+    background-color: var(--background-color);
+    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+.payment-container {
+    max-width: 500px;
+    margin: 2rem auto;
+    background: var(--surface-color);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-md);
+}
+
+.payment-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid #E2E8F0;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.back-btn {
+    color: var(--gcash-blue);
+    text-decoration: none;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    font-size: 0.875rem;
+}
+
+.payment-logo {
+    height: 32px;
+    margin-left: auto;
+}
+
+.payment-details {
+    padding: 1.5rem;
+}
+
+.payment-details h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    color: var(--text-primary);
+}
+
+.amount-display {
+    background: var(--gcash-light-blue);
+    padding: 1.25rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.amount-display .label {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    margin-bottom: 0.5rem;
+}
+
+.amount-display .amount {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--gcash-blue);
+    display: block;
+}
+
+.payment-instructions {
+    background: #F8FAFC;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.payment-instructions h3 {
+    color: var(--text-primary);
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.payment-instructions ol {
+    padding-left: 1.25rem;
+    margin-bottom: 0;
+}
+
+.payment-instructions li {
+    margin-bottom: 0.75rem;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
+
+.payment-instructions li:last-child {
+    margin-bottom: 0;
+}
+
+.qr-code {
+    background: white;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: var(--shadow-sm);
+    margin: 2rem 0;
+    text-align: center;
+}
+
+.qr-code img {
+    max-width: 200px;
+    height: auto;
+    border-radius: 8px;
+}
+
+.payment-form {
+    margin-top: 2rem;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 0.875rem;
+    border: 2px solid #E2E8F0;
+    border-radius: 12px;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+    background: #F8FAFC;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: var(--gcash-blue);
+    background: white;
+    box-shadow: 0 0 0 3px rgba(0, 87, 216, 0.1);
+}
+
+.confirm-payment-btn {
+    width: 100%;
+    padding: 1rem;
+    background: var(--gcash-blue);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.confirm-payment-btn:hover {
+    background: #004CBD;
+    transform: translateY(-1px);
+}
+
+.confirm-payment-btn:active {
+    transform: translateY(0);
+}
+
+@media (max-width: 768px) {
+    .payment-container {
+        margin: 0;
+        border-radius: 0;
+        min-height: 100vh;
+    }
+    
+    .payment-details {
+        padding: 1.25rem;
+    }
+    
+    .qr-code {
+        margin: 1.5rem 0;
+        padding: 1.5rem;
+    }
+} 

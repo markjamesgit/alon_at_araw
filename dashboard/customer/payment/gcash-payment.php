@@ -25,36 +25,44 @@ $payment_details = $_SESSION['payment_details'];
     <title>GCash Payment | Alon at Araw</title>
     <link rel="stylesheet" href="/alon_at_araw/assets/global.css">
     <link rel="stylesheet" href="/alon_at_araw/assets/styles/root-customer.css">
-    <link rel="stylesheet" href="/alon_at_araw/assets/styles/payment.css">
+    <link rel="stylesheet" href="/alon_at_araw/assets/styles/gcash-payment.css">
     <link rel="icon" type="image/png" href="../../../assets/images/logo/logo.png">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 </head>
 <body>
     <div class="payment-container">
         <div class="payment-header">
-            <a href="../checkout.php" class="back-btn">← Back to Checkout</a>
+            <a href="../checkout.php" class="back-btn">
+                <span class="material-icons">arrow_back</span>
+                <span>Back</span>
+            </a>
             <img src="/alon_at_araw/assets/images/payment/gcash-logo.png" alt="GCash" class="payment-logo">
         </div>
 
         <div class="payment-details">
-            <h2>GCash Payment</h2>
+            <h2>Complete Your Payment</h2>
+            
             <div class="amount-display">
-                <span>Amount to Pay:</span>
-                <span class="amount">₱<?= number_format($payment_details['total_amount'], 2) ?></span>
-            </div>
-
-            <div class="payment-instructions">
-                <h3>How to Pay:</h3>
-                <ol>
-                    <li>Open your GCash app</li>
-                    <li>Scan this QR code or send to this number: 09XX-XXX-XXXX</li>
-                    <li>Enter the exact amount: ₱<?= number_format($payment_details['total_amount'], 2) ?></li>
-                    <li>Complete the payment in your GCash app</li>
-                    <li>Enter the reference number below</li>
-                </ol>
+                <div class="label">Amount to Pay</div>
+                <div class="amount">₱<?= number_format($payment_details['total_amount'], 2) ?></div>
             </div>
 
             <div class="qr-code">
-                <img src="/alon_at_araw/assets/images/payment/gcash-qr.png" alt="GCash QR Code">
+                <img src="/alon_at_araw/assets/images/payment/qr-code.png" alt="GCash QR Code">
+                <p style="margin-top: 1rem; color: var(--text-secondary); font-size: 0.875rem;">
+                    Scan with GCash app
+                </p>
+            </div>
+
+            <div class="payment-instructions">
+                <h3>Payment Instructions</h3>
+                <ol>
+                    <li>Open your GCash app on your phone</li>
+                    <li>On the app, tap "Scan QR" and scan the code above</li>
+                    <li>Enter the exact amount: ₱<?= number_format($payment_details['total_amount'], 2) ?></li>
+                    <li>Review and confirm your payment</li>
+                    <li>Copy the reference number from your GCash receipt</li>
+                </ol>
             </div>
 
             <form action="../process-order.php" method="POST" class="payment-form">
@@ -66,23 +74,38 @@ $payment_details = $_SESSION['payment_details'];
                 <input type="hidden" name="special_instructions" value="<?= htmlspecialchars($payment_details['special_instructions']) ?>">
                 
                 <div class="form-group">
-                    <label for="reference_number">GCash Reference Number</label>
+                    <label for="reference_number">Reference Number</label>
                     <input type="text" id="reference_number" name="reference_number" required 
-                           placeholder="Enter your GCash reference number">
+                           placeholder="Enter the reference number from your GCash receipt">
                 </div>
 
-                <button type="submit" class="confirm-payment-btn">Confirm Payment</button>
+                <button type="submit" class="confirm-payment-btn">
+                    <span class="material-icons">check_circle</span>
+                    <span>Confirm Payment</span>
+                </button>
             </form>
         </div>
     </div>
 
     <script>
-        // Add any necessary JavaScript for payment validation
+        // Enhanced payment validation
         document.querySelector('.payment-form').addEventListener('submit', function(e) {
-            const refNumber = document.getElementById('reference_number').value;
+            const refNumber = document.getElementById('reference_number').value.trim();
             if (!refNumber.match(/^[0-9]{10,13}$/)) {
                 e.preventDefault();
                 alert('Please enter a valid GCash reference number (10-13 digits)');
+                document.getElementById('reference_number').focus();
+            }
+        });
+
+        // Add input formatting
+        document.getElementById('reference_number').addEventListener('input', function(e) {
+            // Remove any non-numeric characters
+            this.value = this.value.replace(/[^0-9]/g, '');
+            
+            // Limit to 13 digits
+            if (this.value.length > 13) {
+                this.value = this.value.slice(0, 13);
             }
         });
     </script>
