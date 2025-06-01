@@ -111,72 +111,6 @@ $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <link rel="icon" type="image/png" href="../../assets/images/logo/logo.png"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-toast-plugin/1.3.2/jquery.toast.min.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
-    <style>
-        /* Status select styles */
-        .status-select {
-            padding: 4px 8px;
-            border-radius: 4px;
-            border: 1px solid #ddd;
-            font-size: 0.9em;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .status-select:hover {
-            border-color: #aaa;
-        }
-
-        /* Order status colors */
-        .status-pending {
-            background-color: #fef3c7;
-            color: #92400e;
-        }
-
-        .status-preparing {
-            background-color: #dbeafe;
-            color: #1e40af;
-        }
-
-        .status-ready_for_pickup {
-            background-color: #e0e7ff;
-            color: #3730a3;
-        }
-
-        .status-completed {
-            background-color: #dcfce7;
-            color: #166534;
-        }
-
-        .status-cancelled {
-            background-color: #fee2e2;
-            color: #991b1b;
-        }
-
-        /* Payment status colors */
-        .payment-pending {
-            background-color: #fef3c7;
-            color: #92400e;
-        }
-
-        .payment-paid {
-            background-color: #dcfce7;
-            color: #166534;
-        }
-
-        .payment-failed {
-            background-color: #fee2e2;
-            color: #991b1b;
-        }
-
-        /* Form styles */
-        .status-form {
-            margin: 0;
-        }
-
-        .status-form select {
-            width: 100%;
-        }
-    </style>
 </head>
 <body>
 <div class="main-container">
@@ -217,14 +151,17 @@ $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             <th>Order Status</th>
                             <th>Delivery Method</th>
                             <th>Date</th>
-                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php if (count($orders) > 0): ?>
                             <?php foreach ($orders as $order): ?>
                                 <tr>
-                                    <td><?= htmlspecialchars($order['order_number']) ?></td>
+                                    <td>
+                                        <a href="#" onclick="viewOrderDetails(<?= $order['order_id'] ?>)" class="order-link">
+                                            <?= htmlspecialchars($order['order_number']) ?>
+                                        </a>
+                                    </td>
                                     <td><?= htmlspecialchars($order['customer_name']) ?></td>
                                     <td><?= htmlspecialchars($order['contact_number']) ?></td>
                                     <td>₱<?= number_format($order['total_amount'], 2) ?></td>
@@ -263,11 +200,6 @@ $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                     </td>
                                     <td><?= ucfirst($order['delivery_method']) ?></td>
                                     <td><?= date('M d, Y h:i A', strtotime($order['created_at'])) ?></td>
-                                    <td>
-                                        <button onclick="viewOrderDetails(<?= $order['order_id'] ?>)" class="view-btn">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
-                                    </td>
                                 </tr>
                             <?php endforeach; ?>
                         <?php else: ?>
