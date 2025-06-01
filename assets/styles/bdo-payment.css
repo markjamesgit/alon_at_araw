@@ -1,0 +1,316 @@
+:root {
+    --bdo-blue: #0047AB;
+    --bdo-dark-blue: #003380;
+    --surface-color: #ffffff;
+    --text-primary: #333333;
+    --text-secondary: #666666;
+    --border-color: #e0e0e0;
+    --shadow-color: rgba(0, 0, 0, 0.1);
+}
+
+body {
+    background-color: #f5f5f5;
+    margin: 0;
+    padding: 0;
+    font-family: 'Roboto', Arial, sans-serif;
+    color: var(--text-primary);
+}
+
+.payment-container {
+    max-width: 800px;
+    margin: 2rem auto;
+    background: var(--surface-color);
+    border-radius: 12px;
+    box-shadow: 0 4px 6px var(--shadow-color);
+    overflow: hidden;
+}
+
+.payment-header {
+    background: var(--bdo-blue);
+    padding: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.back-btn {
+    color: white;
+    text-decoration: none;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    transition: opacity 0.2s;
+}
+
+.back-btn:hover {
+    opacity: 0.9;
+}
+
+.payment-logo {
+    height: 40px;
+    filter: brightness(0) invert(1);
+}
+
+.payment-details {
+    padding: 2rem;
+}
+
+.payment-details h2 {
+    color: var(--bdo-blue);
+    margin: 0 0 1.5rem 0;
+    font-size: 1.75rem;
+    font-weight: 500;
+}
+
+.amount-display {
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    border: 1px solid var(--border-color);
+    position: relative;
+    overflow: hidden;
+}
+
+.amount-display::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: var(--bdo-blue);
+    border-radius: 4px 0 0 4px;
+}
+
+.amount-display span {
+    font-size: 1.1rem;
+}
+
+.amount-display .amount {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--bdo-blue);
+}
+
+.payment-instructions {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    margin-bottom: 2rem;
+}
+
+.payment-instructions h3 {
+    color: var(--bdo-blue);
+    margin: 0 0 1rem 0;
+    font-size: 1.2rem;
+    font-weight: 500;
+}
+
+.bank-details {
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+}
+
+.bank-details p {
+    margin: 0.5rem 0;
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.bank-details p:last-child {
+    border-bottom: none;
+}
+
+.bank-details strong {
+    color: var(--text-secondary);
+}
+
+ol {
+    padding-left: 1.2rem;
+    margin: 0;
+}
+
+ol li {
+    margin-bottom: 0.8rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.payment-form {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 0.8rem;
+    border: 2px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 1rem;
+    transition: border-color 0.2s;
+    box-sizing: border-box;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: var(--bdo-blue);
+    box-shadow: 0 0 0 2px rgba(0, 71, 171, 0.1);
+}
+
+.confirm-payment-btn {
+    background: var(--bdo-blue);
+    color: white;
+    border: none;
+    padding: 1rem 2rem;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: 500;
+    width: 100%;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.confirm-payment-btn:hover {
+    background: var(--bdo-dark-blue);
+}
+
+.confirm-payment-btn:active {
+    transform: translateY(1px);
+}
+
+.confirm-payment-btn:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(0, 71, 171, 0.3);
+}
+
+.confirm-payment-btn.loading {
+    background: var(--bdo-dark-blue);
+    opacity: 0.8;
+    cursor: wait;
+}
+
+/* Material Icons Styling */
+.material-icons {
+    vertical-align: middle;
+    margin-right: 8px;
+    font-size: 20px;
+}
+
+.payment-header .material-icons {
+    color: white;
+    margin-right: 4px;
+}
+
+h3 .material-icons {
+    color: var(--bdo-blue);
+    margin-right: 12px;
+}
+
+.form-group label .material-icons {
+    color: var(--text-secondary);
+}
+
+.confirm-payment-btn .material-icons {
+    font-size: 18px;
+    margin-right: 8px;
+}
+
+/* Form Validation States */
+.form-group input.error {
+    border-color: #dc3545;
+    background-color: #fff8f8;
+}
+
+.form-group input.valid {
+    border-color: #28a745;
+    background-color: #f8fff8;
+}
+
+/* Enhanced Bank Details */
+.bank-details p span {
+    font-family: 'Roboto Mono', monospace;
+    background: #fff;
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+}
+
+/* Enhanced Amount Display */
+.amount-display {
+    position: relative;
+    overflow: hidden;
+}
+
+.amount-display::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: var(--bdo-blue);
+    border-radius: 4px 0 0 4px;
+}
+
+/* Responsive Enhancements */
+@media (max-width: 768px) {
+    .payment-container {
+        margin: 0;
+        border-radius: 0;
+    }
+    
+    .payment-details {
+        padding: 1rem;
+    }
+    
+    .bank-details p {
+        flex-direction: column;
+    }
+    
+    .bank-details strong {
+        margin-bottom: 0.3rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .bank-details p {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .amount-display {
+        flex-direction: column;
+        gap: 8px;
+        text-align: center;
+    }
+    
+    .payment-header {
+        padding: 1rem;
+    }
+    
+    .payment-logo {
+        height: 32px;
+    }
+}
