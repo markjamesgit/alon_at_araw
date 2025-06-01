@@ -120,6 +120,50 @@ $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <h1>View Orders</h1>
             <p class="subtitle">View and manage customer orders. Update order status and track delivery progress.</p>
 
+            <div class="user-controls">
+                <input type="text" 
+                       id="searchInput" 
+                       class="search-input" 
+                       placeholder="Search by order #, customer name or contact..."
+                       value="<?= isset($_GET['search']) ? htmlspecialchars($_GET['search']) : '' ?>">
+                
+                <div class="filter-dropdown">
+                    <select id="paymentMethodFilter" class="filter-select">
+                        <option value="">All Payment Methods</option>
+                        <option value="cash">Cash</option>
+                        <option value="gcash">GCash</option>
+                    </select>
+                </div>
+
+                <div class="filter-dropdown">
+                    <select id="paymentStatusFilter" class="filter-select">
+                        <option value="">All Payment Status</option>
+                        <option value="pending">Pending</option>
+                        <option value="paid">Paid</option>
+                        <option value="failed">Failed</option>
+                    </select>
+                </div>
+
+                <div class="filter-dropdown">
+                    <select id="orderStatusFilter" class="filter-select">
+                        <option value="">All Order Status</option>
+                        <option value="pending">Pending</option>
+                        <option value="preparing">Preparing</option>
+                        <option value="ready_for_pickup">Ready for Pickup</option>
+                        <option value="completed">Completed</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                </div>
+
+                <div class="filter-dropdown">
+                    <select id="deliveryMethodFilter" class="filter-select">
+                        <option value="">All Delivery Methods</option>
+                        <option value="pickup">Pickup</option>
+                        <option value="delivery">Delivery</option>
+                    </select>
+                </div>
+            </div>
+
             <div class="table-container">
                 <div class="table-controls">
                     <div class="entries-control">
@@ -154,6 +198,11 @@ $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         </tr>
                     </thead>
                     <tbody>
+                        <tr class="no-results" style="display: none;">
+                            <td colspan="9" class="no-records">
+                                No orders found. Try searching again.
+                            </td>
+                        </tr>
                         <?php if (count($orders) > 0): ?>
                             <?php foreach ($orders as $order): ?>
                                 <tr>
@@ -342,33 +391,119 @@ function getValidOrderStatuses(paymentStatus) {
         case 'failed':
             return ['cancelled'];
         default:
-            return [];
+            return ['pending', 'preparing', 'ready_for_pickup', 'completed', 'cancelled'];
     }
 }
 
-// Function to update order status options
-function updateOrderStatusOptions(selectElement, paymentStatus) {
+// Function to update order status options in the table
+function updateTableOrderStatus(row, paymentStatus) {
+    const orderStatusSelect = row.find('select[name="new_status"]');
     const validStatuses = getValidOrderStatuses(paymentStatus);
     
     // Hide all options first
-    Array.from(selectElement.options).forEach(option => {
-        option.style.display = 'none';
-    });
-    
-    // Show only valid options based on payment status
-    Array.from(selectElement.options).forEach(option => {
-        if (validStatuses.includes(option.value)) {
-            option.style.display = '';
+    orderStatusSelect.find('option').each(function() {
+        if (!validStatuses.includes($(this).val())) {
+            $(this).hide();
+        } else {
+            $(this).show();
         }
     });
-    
-    // If current value is not in valid statuses, set to first valid status
-    if (!validStatuses.includes(selectElement.value)) {
-        selectElement.value = validStatuses[0];
-        // Update the select appearance
-        selectElement.className = `status-select status-${validStatuses[0]}`;
+
+    // If current value is not valid, set to first valid status
+    if (!validStatuses.includes(orderStatusSelect.val())) {
+        orderStatusSelect.val(validStatuses[0]);
     }
 }
+
+// Function to apply filters and search
+function applyFilters() {
+    const searchQuery = $('#searchInput').val().toLowerCase();
+    const paymentMethod = $('#paymentMethodFilter').val();
+    const paymentStatus = $('#paymentStatusFilter').val();
+    const orderStatus = $('#orderStatusFilter').val();
+    const deliveryMethod = $('#deliveryMethodFilter').val();
+
+    let hasVisibleRows = false;
+
+    $('.orders-table tbody tr:not(.no-results)').each(function() {
+        const row = $(this);
+        const orderNumber = row.find('td:eq(0)').text().toLowerCase();
+        const customerName = row.find('td:eq(1)').text().toLowerCase();
+        const contact = row.find('td:eq(2)').text().toLowerCase();
+        const rowPaymentMethod = row.find('td:eq(4)').text().toLowerCase();
+        const rowPaymentStatus = row.find('td:eq(5) select').val();
+        const rowOrderStatus = row.find('td:eq(6) select').val();
+        const rowDeliveryMethod = row.find('td:eq(7)').text().toLowerCase();
+
+        const matchesSearch = searchQuery === '' || 
+                            orderNumber.includes(searchQuery) || 
+                            customerName.includes(searchQuery) || 
+                            contact.includes(searchQuery);
+
+        const matchesPaymentMethod = !paymentMethod || rowPaymentMethod === paymentMethod;
+        const matchesPaymentStatus = !paymentStatus || rowPaymentStatus === paymentStatus;
+        let matchesOrderStatus = true;
+        if (orderStatus) {
+            // Check if the order status is valid for the current payment status
+            const validStatuses = getValidOrderStatuses(rowPaymentStatus);
+            matchesOrderStatus = validStatuses.includes(orderStatus) && rowOrderStatus === orderStatus;
+        }
+        const matchesDeliveryMethod = !deliveryMethod || rowDeliveryMethod === deliveryMethod;
+
+        if (matchesSearch && matchesPaymentMethod && matchesPaymentStatus && 
+            matchesOrderStatus && matchesDeliveryMethod) {
+            row.show();
+            hasVisibleRows = true;
+            // Update the order status options based on the row's payment status
+            updateTableOrderStatus(row, rowPaymentStatus);
+        } else {
+            row.hide();
+        }
+    });
+
+    // Show/hide no results message
+    $('.no-results').toggle(!hasVisibleRows);
+    
+    // Update table info
+    updateTableInfo();
+
+    // Update order status filter options based on payment status filter
+    const orderStatusFilter = $('#orderStatusFilter');
+    const validFilterStatuses = getValidOrderStatuses(paymentStatus);
+    
+    orderStatusFilter.find('option').each(function() {
+        const option = $(this);
+        if (option.val() === '') return; // Skip "All Order Status" option
+        
+        if (!validFilterStatuses.includes(option.val())) {
+            option.hide();
+        } else {
+            option.show();
+        }
+    });
+
+    // Reset order status filter if current value is not valid
+    if (paymentStatus && !validFilterStatuses.includes(orderStatusFilter.val())) {
+        orderStatusFilter.val('');
+    }
+}
+
+// Function to update table info
+function updateTableInfo() {
+    const visibleRows = $('.orders-table tbody tr:visible:not(.no-results)').length;
+    const totalRows = $('.orders-table tbody tr:not(.no-results)').length;
+    $('.table-info').text(`Showing ${visibleRows} of ${totalRows} entries`);
+}
+
+// Bind events to filters
+$('#searchInput').on('input', applyFilters);
+$('#paymentMethodFilter, #paymentStatusFilter, #orderStatusFilter, #deliveryMethodFilter').on('change', applyFilters);
+
+// Handle payment status changes in the table
+$(document).on('change', 'select[name="new_payment_status"]', function() {
+    const row = $(this).closest('tr');
+    updateTableOrderStatus(row, $(this).val());
+});
 
 // Function to handle order status changes
 function handleOrderStatusChange(selectElement, orderId) {
@@ -394,7 +529,7 @@ function handlePaymentStatusChange(selectElement, orderId) {
     const orderStatusSelect = document.querySelector(`[data-order-id="${orderId}"]`);
     
     // Update available order statuses
-    updateOrderStatusOptions(orderStatusSelect, newPaymentStatus);
+    updateOrderStatusOptions(newPaymentStatus);
     
     return true;
 }
@@ -406,10 +541,40 @@ document.addEventListener('DOMContentLoaded', function() {
         const orderId = select.closest('form').querySelector('[name="order_id"]').value;
         const orderStatusSelect = document.querySelector(`[data-order-id="${orderId}"]`);
         if (orderStatusSelect) {
-            updateOrderStatusOptions(orderStatusSelect, select.value);
+            updateOrderStatusOptions(select.value);
         }
     });
+});
+
+$(document).ready(function() {
+    // Initialize filters
+    applyFilters();
+
+    // Function to update select colors based on value
+    function updateSelectColors() {
+        // Update payment status colors
+        $('select[name="new_payment_status"]').each(function() {
+            $(this).removeClass('payment-pending payment-paid payment-failed')
+                  .addClass('payment-' + $(this).val());
+        });
+
+        // Update order status colors
+        $('select[name="new_status"]').each(function() {
+            $(this).removeClass('status-pending status-preparing status-ready_for_pickup status-completed status-cancelled')
+                  .addClass('status-' + $(this).val());
+        });
+    }
+
+    // Update colors on page load
+    updateSelectColors();
+
+    // Update colors when status changes
+    $(document).on('change', 'select[name="new_payment_status"], select[name="new_status"]', function() {
+        updateSelectColors();
+    });
+
 });
 </script>
 </body>
 </html>
+
