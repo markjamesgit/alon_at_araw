@@ -48,11 +48,7 @@ if (isset($_SESSION['user_id']) && $_SESSION['type'] === 'customer') {
   <!-- Center -->
   <nav class="header-nav" role="navigation" aria-label="Primary navigation">
     <ul>
-      <li><a href="/alon_at_araw/dashboard/customer/dashboard.php">Home</a></li>
       <li><a href="/alon_at_araw/dashboard/customer/menus.php">Menu</a></li>
-      <li><a href="/alon_at_araw/dashboard/customer/dashboard.php#featured">Featured</a></li>
-      <li><a href="/alon_at_araw/dashboard/customer/dashboard.php#about">About</a></li>
-      <li><a href="/alon_at_araw/dashboard/customer/dashboard.php#contact">Contact</a></li>
     </ul>
   </nav>
 

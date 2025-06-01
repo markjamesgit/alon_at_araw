@@ -69,7 +69,8 @@ nav.header-nav ul {
 nav.header-nav a {
   color: var(--background);
   text-decoration: none;
-  font-weight: 600;
+  font-weight: 400;
+  letter-spacing: 1px;
   font-size: 1rem;
   padding: 8px 0;
   border-bottom: 2px solid transparent;
