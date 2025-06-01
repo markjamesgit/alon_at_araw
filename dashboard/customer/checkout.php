@@ -70,7 +70,7 @@ $_SESSION['checkout_items'] = $selectedItems;
                 <?php if (empty($cart_items)): ?>
                     <p class="no-items">No items selected for checkout.</p>
                 <?php else: ?>
-                    <div class="order-items-container">
+                    <div class="order-items-container" id="orderItemsContainer">
                         <?php foreach ($cart_items as $item): ?>
                             <div class="order-item">
                                 <img src="/alon_at_araw/assets/uploads/products/<?= htmlspecialchars($item['product_image']) ?>" 
@@ -277,6 +277,17 @@ $_SESSION['checkout_items'] = $selectedItems;
                     console.error('Error:', error);
                     alert('An error occurred. Please try again.');
                 });
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Force redraw of order items container
+            const orderItemsContainer = document.getElementById('orderItemsContainer');
+            if (orderItemsContainer) {
+                orderItemsContainer.style.display = 'none';
+                setTimeout(() => {
+                    orderItemsContainer.style.display = 'block';
+                }, 0);
             }
         });
     </script>
