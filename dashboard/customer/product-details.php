@@ -262,14 +262,199 @@ function getStockStatus($productComponentQty, $globalQty) {
 function formatPrice(number) {
   // Remove any existing peso sign and commas before formatting
   if (typeof number === 'string') {
-    number = parseFloat(number.replace(/[₱,]/g, ''));
+    number = number.replace(/[₱,]/g, '');
   }
-  // Handle NaN or invalid numbers
-  if (isNaN(number)) {
-    number = 0;
-  }
+  // Handle NaN, undefined, or invalid numbers
+  number = parseFloat(number) || 0;
   return number.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
+
+// Function to update button states based on selections
+function updateButtonStates() {
+  const hasSelectedItems = $('.item-checkbox:checked').length > 0;
+  const hasItems = $('.cart-item').length > 0;
+  
+  // Enable/disable delete button based on selections
+  $('#deleteSelectedBtn').prop('disabled', !hasSelectedItems);
+  
+  // Always enable checkout if there are items
+  $('.btn-checkout').prop('disabled', false);
+  
+  // Update select all checkbox
+  const totalCheckboxes = $('.item-checkbox').length;
+  const checkedCheckboxes = $('.item-checkbox:checked').length;
+  if (totalCheckboxes > 0) {
+    $('#selectAllItems').prop('checked', totalCheckboxes === checkedCheckboxes);
+  }
+}
+
+// Function to bind cart action events
+function bindCartEvents() {
+  // Bind checkout button click handler
+  $('.btn-checkout').off('click').on('click', function(e) {
+    e.preventDefault();
+    
+    // Get selected items
+    const selectedItems = $('.item-checkbox:checked');
+    
+    // Check if any items are selected when checkboxes exist
+    if ($('.item-checkbox').length > 0 && selectedItems.length === 0) {
+      $.toast({
+        heading: 'Selection Required',
+        text: 'Please select at least one item to checkout.',
+        icon: 'warning',
+        position: 'bottom-left',
+        hideAfter: 3000,
+        stack: false
+      });
+      return;
+    }
+
+    // Check if user is logged in
+    $.get('/alon_at_araw/auth/check-auth.php', function(response) {
+      if (response.logged_in) {
+        // Check if cart is empty
+        if ($('.cart-item').length === 0) {
+          $.toast({
+            heading: 'Empty Cart',
+            text: 'Please add items to your cart before checking out.',
+            icon: 'warning',
+            position: 'bottom-left',
+            hideAfter: 3000,
+            stack: false
+          });
+        } else {
+          // If items are selected, pass them as query parameter
+          let checkoutUrl = '/alon_at_araw/dashboard/customer/checkout.php';
+          if (selectedItems.length > 0) {
+            const selectedIds = selectedItems.map(function() {
+              return $(this).data('id');
+            }).get();
+            checkoutUrl += '?items=' + selectedIds.join(',');
+          }
+          // Proceed to checkout
+          window.location.href = checkoutUrl;
+        }
+      } else {
+        // Redirect to login
+        $.toast({
+          heading: 'Login Required',
+          text: 'Please login to proceed with checkout.',
+          icon: 'warning',
+          position: 'bottom-left',
+          hideAfter: 3000,
+          stack: false
+        });
+        window.location.href = '/alon_at_araw/auth/login.php';
+      }
+    }, 'json');
+  });
+
+  // Bind delete selected items functionality
+  $('#deleteSelectedBtn').off('click').on('click', function() {
+    if ($('.item-checkbox:checked').length > 0) {
+      $('#clearCartModal').css('display', 'flex');
+    }
+  });
+
+  // Update button states when checkboxes change
+  $(document).off('change', '.item-checkbox').on('change', '.item-checkbox', function() {
+    updateButtonStates();
+  });
+
+  // Select All functionality
+  $('#selectAllItems').off('change').on('change', function() {
+    const isChecked = $(this).prop('checked');
+    $('.item-checkbox').prop('checked', isChecked);
+    updateButtonStates();
+  });
+
+  // Cancel delete
+  $('#cancelClearCart').off('click').on('click', function() {
+    $('#clearCartModal').css('display', 'none');
+  });
+
+  // Confirm delete selected items
+  $('#confirmClearCart').off('click').on('click', function() {
+    const selectedItems = $('.item-checkbox:checked').map(function() {
+      return $(this).data('id');
+    }).get();
+
+    $.ajax({
+      url: '/alon_at_araw/dashboard/customer/cart/delete-cart-items.php',
+      type: 'POST',
+      dataType: 'json',
+      data: {
+        cart_ids: selectedItems
+      },
+      success: function(data) {
+        if (data.success) {
+          selectedItems.forEach(cartId => {
+            $(`.cart-item[data-id="${cartId}"]`).remove();
+          });
+          
+          // Clean and format the total price
+          const cleanTotal = formatPrice(data.cart_total_price);
+          $('.cart-footer span:last-child').text(`₱${cleanTotal}`);
+          $('#cartCount').text(data.cart_total_quantity);
+          
+          $.toast({
+            heading: 'Items Deleted',
+            text: 'Selected items have been removed from your cart.',
+            icon: 'success',
+            position: 'bottom-left',
+            hideAfter: 2000,
+            stack: false
+          });
+
+          // Hide modal
+          $('#clearCartModal').css('display', 'none');
+          
+          // Update button states after deletion
+          updateButtonStates();
+          
+          // If cart is empty, refresh the page
+          if (data.cart_total_quantity === 0) {
+            location.reload();
+          }
+        } else {
+          $.toast({
+            heading: 'Error',
+            text: data.message || 'Failed to delete items.',
+            icon: 'error',
+            position: 'bottom-left',
+            hideAfter: 2000,
+            stack: false
+          });
+        }
+      },
+      error: function() {
+        $.toast({
+          heading: 'Error',
+          text: 'Failed to delete items. Please try again.',
+          icon: 'error',
+          position: 'bottom-left',
+          hideAfter: 3000,
+          stack: false
+        });
+      }
+    });
+  });
+}
+
+// Call bindCartEvents and updateButtonStates on page load and when returning to the page
+$(document).ready(function() {
+  bindCartEvents();
+  updateButtonStates();
+});
+
+// Handle visibility change (when user returns to the page)
+document.addEventListener('visibilitychange', function() {
+  if (!document.hidden) {
+    bindCartEvents();
+    updateButtonStates();
+  }
+});
 
 // Handle Add to Cart form with AJAX
 $('form').on('submit', function(e) {
@@ -313,177 +498,111 @@ $('form').on('submit', function(e) {
   // All good, proceed with AJAX submit
   const formData = form.serialize();
 
-  $.post('/alon_at_araw/dashboard/customer/cart/add-to-cart.php', formData, function(response) {
-    if (response.success) {
-      $.toast({
-        heading: 'Added to Cart',
-        text: response.message,
-        icon: 'success',
-        position: 'bottom-left',
-        hideAfter: 2000,
-        stack: false
-      });
+  $.post('/alon_at_araw/dashboard/customer/cart/add-to-cart.php', formData)
+    .done(function(response) {
+      try {
+        // Parse response if it's a string
+        if (typeof response === 'string') {
+          response = JSON.parse(response);
+        }
 
-      // Reset form
-      form.trigger('reset');
-      form.find('.sbx-quantity-input').val(1);
-      form.find('.sbx-cup-option').removeClass('selected');
-      form.find('input[name="cup_size"]').prop('checked', false);
-      
-      // Update cart badge
-      $('#cartCount').text(response.totalQuantity);
-      
-      // Parse the cart HTML response
-      const $cartHtml = $(response.cartHtml);
-      
-      // Update cart content
-      $('#cartSidebarContent').html($cartHtml.find('#cartSidebarContent').html());
-      $('.cart-header h2').text(`Your Cart (${response.totalQuantity})`);
-
-      // Clean and format the total price
-      const totalPrice = parseFloat(response.totalPrice.replace(/[₱,]/g, ''));
-      $('.cart-footer span:last-child').text(`₱${formatPrice(totalPrice)}`);
-      
-      // Update cart actions
-      if (response.totalQuantity > 0) {
-        $('.cart-actions').html(`
-          <button class="btn-checkout">Proceed to Checkout</button>
-          <button id="deleteSelectedBtn" disabled>Delete Selected Items</button>
-        `);
-
-        // Rebind checkout button click handler
-        $('.btn-checkout').off('click').on('click', function(e) {
-          e.preventDefault();
-          // Check if user is logged in
-          $.get('/alon_at_araw/auth/check-auth.php', function(response) {
-            if (response.logged_in) {
-              // Check if cart is empty
-              if ($('.cart-item').length === 0) {
-                $.toast({
-                  heading: 'Empty Cart',
-                  text: 'Please add items to your cart before checking out.',
-                  icon: 'warning',
-                  position: 'bottom-left',
-                  hideAfter: 3000,
-                  stack: false
-                });
-              } else {
-                // Proceed to checkout
-                window.location.href = '/alon_at_araw/dashboard/customer/checkout.php';
-              }
-            } else {
-              // Redirect to login
-              $.toast({
-                heading: 'Login Required',
-                text: 'Please login to proceed with checkout.',
-                icon: 'warning',
-                position: 'bottom-left',
-                hideAfter: 3000,
-                stack: false
-              });
-              window.location.href = '/alon_at_araw/auth/login.php';
-            }
-          }, 'json');
-        });
-
-        // Bind delete selected items functionality
-        $('#deleteSelectedBtn').off('click').on('click', function() {
-          if ($('.item-checkbox:checked').length > 0) {
-            $('#clearCartModal').css('display', 'flex');
-          }
-        });
-
-        // Update delete button state when checkboxes change
-        $(document).on('change', '.item-checkbox', function() {
-          const hasSelectedItems = $('.item-checkbox:checked').length > 0;
-          $('#deleteSelectedBtn').prop('disabled', !hasSelectedItems);
-          
-          // Update select all checkbox
-          const totalCheckboxes = $('.item-checkbox').length;
-          const checkedCheckboxes = $('.item-checkbox:checked').length;
-          $('#selectAllItems').prop('checked', totalCheckboxes === checkedCheckboxes);
-        });
-
-        // Select All functionality
-        $('#selectAllItems').off('change').on('change', function() {
-          const isChecked = $(this).prop('checked');
-          $('.item-checkbox').prop('checked', isChecked);
-          $('#deleteSelectedBtn').prop('disabled', !isChecked);
-        });
-
-        // Cancel delete
-        $('#cancelClearCart').off('click').on('click', function() {
-          $('#clearCartModal').css('display', 'none');
-        });
-
-        // Confirm delete selected items
-        $('#confirmClearCart').off('click').on('click', function() {
-          const selectedItems = $('.item-checkbox:checked').map(function() {
-            return $(this).data('id');
-          }).get();
-
-          $.ajax({
-            url: '/alon_at_araw/dashboard/customer/cart/delete-cart-items.php',
-            type: 'POST',
-            dataType: 'json',
-            data: {
-              cart_ids: selectedItems
-            },
-            success: function(data) {
-              if (data.success) {
-                selectedItems.forEach(cartId => {
-                  $(`.cart-item[data-id="${cartId}"]`).remove();
-                });
-                
-                // Clean and format the total price
-                const cleanTotal = parseFloat(String(data.cart_total_price).replace(/[₱,]/g, ''));
-                $('.cart-footer span:last-child').text(`₱${formatPrice(cleanTotal)}`);
-                $('#cartCount').text(data.cart_total_quantity);
-                
-                $.toast({
-                  heading: 'Items Deleted',
-                  text: 'Selected items have been removed from your cart.',
-                  icon: 'success',
-                  position: 'bottom-left',
-                  hideAfter: 2000,
-                  stack: false
-                });
-
-                // Hide modal
-                $('#clearCartModal').css('display', 'none');
-                
-                // If cart is empty, refresh the page
-                if (data.cart_total_quantity === 0) {
-                  location.reload();
-                }
-              } else {
-                $.toast({
-                  heading: 'Error',
-                  text: data.message || 'Failed to delete items.',
-                  icon: 'error',
-                  position: 'bottom-left',
-                  hideAfter: 2000,
-                  stack: false
-                });
-              }
-            }
+        if (response.success) {
+          $.toast({
+            heading: 'Added to Cart',
+            text: response.message || 'Item added to cart successfully.',
+            icon: 'success',
+            position: 'bottom-left',
+            hideAfter: 2000,
+            stack: false
           });
+
+          // Reset form
+          form.trigger('reset');
+          form.find('.sbx-quantity-input').val(1);
+          form.find('.sbx-cup-option').removeClass('selected');
+          form.find('input[name="cup_size"]').prop('checked', false);
+          
+          // Update cart badge - safely handle undefined
+          if (response.totalQuantity !== undefined) {
+            $('#cartCount').text(response.totalQuantity);
+          }
+          
+          // Parse the cart HTML response if it exists
+          if (response.cartHtml) {
+            const $cartHtml = $(response.cartHtml);
+            $('#cartSidebarContent').html($cartHtml.find('#cartSidebarContent').html());
+          }
+
+          // Update cart header if totalQuantity exists
+          if (response.totalQuantity !== undefined) {
+            $('.cart-header h2').text(`Your Cart (${response.totalQuantity})`);
+          }
+
+          // Safely handle price formatting
+          if (response.totalPrice) {
+            const totalPrice = formatPrice(response.totalPrice);
+            $('.cart-footer span:last-child').text(`₱${totalPrice}`);
+          }
+          
+          // Update cart actions
+          if (response.totalQuantity > 0) {
+            $('.cart-actions').html(`
+              <button class="btn-checkout">Proceed to Checkout</button>
+              <button id="deleteSelectedBtn" disabled>Delete Selected Items</button>
+            `);
+            // Rebind events and update states after updating cart actions
+            bindCartEvents();
+            updateButtonStates();
+          } else {
+            $('.cart-actions').empty();
+          }
+        } else if (response.error === 'not_logged_in') {
+          // Handle not logged in case
+          $.toast({
+            heading: 'Login Required',
+            text: 'Please login to add items to your cart.',
+            icon: 'warning',
+            position: 'bottom-left',
+            hideAfter: 3000,
+            stack: false
+          });
+          setTimeout(function() {
+            window.location.href = '/alon_at_araw/auth/login.php';
+          }, 2000);
+        } else {
+          // Handle other errors
+          $.toast({
+            heading: 'Error',
+            text: response.message || 'Something went wrong.',
+            icon: 'error',
+            position: 'bottom-left',
+            hideAfter: 2000,
+            stack: false
+          });
+        }
+      } catch (e) {
+        console.error('Error processing response:', e);
+        $.toast({
+          heading: 'Error',
+          text: 'Failed to process the response. Please try again.',
+          icon: 'error',
+          position: 'bottom-left',
+          hideAfter: 3000,
+          stack: false
         });
-      } else {
-        $('.cart-actions').empty();
       }
-      
-    } else {
+    })
+    .fail(function(jqXHR, textStatus, errorThrown) {
+      console.error('AJAX Error:', textStatus, errorThrown);
       $.toast({
         heading: 'Error',
-        text: response.message || 'Something went wrong.',
+        text: 'Failed to add item to cart. Please try again.',
         icon: 'error',
         position: 'bottom-left',
-        hideAfter: 2000,
+        hideAfter: 3000,
         stack: false
       });
-    }
-  }, 'json');
+    });
 });
 
 document.querySelectorAll('.sbx-addons-flavors').forEach(container => {
