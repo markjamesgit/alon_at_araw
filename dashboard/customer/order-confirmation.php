@@ -52,72 +52,8 @@ $order_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <title>Order Confirmation | Alon at Araw</title>
     <link rel="stylesheet" href="/alon_at_araw/assets/global.css">
     <link rel="stylesheet" href="/alon_at_araw/assets/styles/root-customer.css">
-    <link rel="stylesheet" href="/alon_at_araw/assets/styles/checkout.css">
+    <link rel="stylesheet" href="/alon_at_araw/assets/styles/order-confirmation.css">
     <link rel="icon" type="image/png" href="../../assets/images/logo/logo.png">
-    <style>
-        .confirmation-message {
-            text-align: center;
-            margin-bottom: 2rem;
-            padding: 2rem;
-            background: var(--success-light);
-            border-radius: 8px;
-            color: var(--success);
-        }
-
-        .confirmation-message h2 {
-            color: var(--success);
-            margin-bottom: 1rem;
-        }
-
-        .order-details {
-            background: var(--card-bg);
-            padding: 2rem;
-            border-radius: 8px;
-            margin-bottom: 2rem;
-        }
-
-        .order-details h3 {
-            color: var(--text-dark);
-            margin-bottom: 1rem;
-            padding-bottom: 0.5rem;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .detail-group {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1rem;
-            margin-bottom: 1rem;
-        }
-
-        .detail-item {
-            padding: 1rem;
-            background: var(--background);
-            border-radius: 6px;
-        }
-
-        .detail-item strong {
-            display: block;
-            color: var(--text-dark);
-            margin-bottom: 0.5rem;
-        }
-
-        .back-to-shop {
-            display: inline-block;
-            padding: 1rem 2rem;
-            background: var(--primary);
-            color: var(--background);
-            text-decoration: none;
-            border-radius: 8px;
-            margin-top: 1rem;
-            transition: all 0.3s ease;
-        }
-
-        .back-to-shop:hover {
-            background: var(--primary-dark);
-            transform: translateY(-2px);
-        }
-    </style>
 </head>
 <body>
     <?php include '../../includes/customer-header.php'; ?>

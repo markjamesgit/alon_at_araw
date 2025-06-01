@@ -60,7 +60,10 @@ $_SESSION['checkout_items'] = $selectedItems;
 
     <main class="checkout-page">
         <div class="checkout-container">
-            <h1>Checkout</h1>
+            <div class="checkout-header">
+                <a href="menus.php" class="back-btn">← Back to Cart</a>
+                <h1>Checkout</h1>
+            </div>
 
             <!-- Order Summary -->
             <section class="order-summary">
@@ -127,7 +130,7 @@ $_SESSION['checkout_items'] = $selectedItems;
 
             <?php if (!empty($cart_items)): ?>
             <!-- Checkout Form -->
-            <form action="process-order.php" method="POST" class="checkout-form">
+            <form id="checkoutForm" class="checkout-form">
                 <h2>Order Details</h2>
                 
                 <div class="form-group">
@@ -149,18 +152,29 @@ $_SESSION['checkout_items'] = $selectedItems;
                 </div>
 
                 <div class="form-group">
-                    <label for="payment_method">Payment Method</label>
-                    <select name="payment_method" id="payment_method" required>
-                        <option value="cash">Cash</option>
-                        <option value="gcash">GCash</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
                     <label for="special_instructions">Special Instructions (Optional)</label>
                     <textarea name="special_instructions" id="special_instructions" rows="3"></textarea>
                 </div>
 
+                <div class="payment-methods">
+                    <h3>Select Payment Method</h3>
+                    <div class="payment-options">
+                        <div class="payment-option" data-method="cash">
+                            <img src="/alon_at_araw/assets/images/payment/cash.png" alt="Cash">
+                            <span>Cash</span>
+                        </div>
+                        <div class="payment-option" data-method="gcash">
+                            <img src="/alon_at_araw/assets/images/payment/gcash-logo.png" alt="GCash">
+                            <span>GCash</span>
+                        </div>
+                        <div class="payment-option" data-method="bdo">
+                            <img src="/alon_at_araw/assets/images/payment/bdo-logo.png" alt="BDO">
+                            <span>BDO Online</span>
+                        </div>
+                    </div>
+                </div>
+
+                <input type="hidden" name="payment_method" id="payment_method">
                 <input type="hidden" name="total_amount" value="<?= $total_amount ?>">
                 
                 <button type="submit" class="place-order-btn">Place Order</button>
@@ -185,6 +199,74 @@ $_SESSION['checkout_items'] = $selectedItems;
             } else {
                 deliveryAddress.style.display = 'none';
                 addressInput.required = false;
+            }
+        });
+
+        // Handle payment method selection
+        document.querySelectorAll('.payment-option').forEach(option => {
+            option.addEventListener('click', function() {
+                // Remove selected class from all options
+                document.querySelectorAll('.payment-option').forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+                // Add selected class to clicked option
+                this.classList.add('selected');
+                // Update hidden input
+                document.getElementById('payment_method').value = this.dataset.method;
+            });
+        });
+
+        // Handle form submission
+        document.getElementById('checkoutForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const paymentMethod = document.getElementById('payment_method').value;
+            if (!paymentMethod) {
+                alert('Please select a payment method');
+                return;
+            }
+
+            const formData = new FormData(this);
+
+            if (paymentMethod === 'cash') {
+                // For cash payments, submit directly to process-order.php
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = 'process-order.php';
+
+                // Add all form data to the new form
+                for (const [key, value] of formData.entries()) {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = key;
+                    input.value = value;
+                    form.appendChild(input);
+                }
+
+                document.body.appendChild(form);
+                form.submit();
+            } else {
+                // For other payment methods, store details and redirect
+                fetch('payment/store-payment-details.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        if (paymentMethod === 'gcash') {
+                            window.location.href = 'payment/gcash-payment.php';
+                        } else if (paymentMethod === 'bdo') {
+                            window.location.href = 'payment/bdo-payment.php';
+                        }
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred. Please try again.');
+                });
             }
         });
     </script>
