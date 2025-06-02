@@ -500,26 +500,3 @@ $(document).ready(function () {
 });
 </script>
 
-<style>
-/* Add these styles inline for now, you can move them to cart-sidebar.css later */
-.selection-hint {
-  display: block;
-  text-align: center;
-  color: #666;
-  font-size: 0.85rem;
-  margin-top: 0.5rem;
-}
-
-.btn-checkout:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  background-color: #999;
-}
-
-.cart-footer span:last-child {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-</style>
-
