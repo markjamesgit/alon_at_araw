@@ -169,24 +169,25 @@ function formatPrice($price) {
 
 <script>
 $(document).ready(function () {
+  // Initialize cart state immediately
+  function initializeCart() {
+    // Set initial total to zero
+    $('.cart-footer span:last-child').text('₱0.00');
+    $('.btn-checkout, #deleteSelectedBtn').prop('disabled', true);
+    
+    // Ensure all checkboxes are unchecked initially
+    $('.item-checkbox, #selectAllItems').prop('checked', false);
+  }
+
+  // Format price function
   function formatPrice(number) {
-    // Remove any existing peso sign and commas before formatting
     if (typeof number === 'string') {
       number = parseFloat(number.replace(/[₱,]/g, ''));
     }
-    // Handle NaN or invalid numbers
     if (isNaN(number)) {
       number = 0;
     }
-    // Format number with commas and 2 decimal places
     return number.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-  }
-
-  function updateCartSummary(quantity, totalPrice) {
-    $('.cart-header h2').text(`Your Cart (${quantity})`);
-    // Clean and format the total price
-    const cleanTotal = parseFloat(String(totalPrice).replace(/[₱,]/g, ''));
-    $('.cart-footer span:last-child').text(`₱${formatPrice(cleanTotal)}`);
   }
 
   function updateSelectedTotal() {
@@ -195,52 +196,70 @@ $(document).ready(function () {
     
     $('.item-checkbox:checked').each(function() {
       const cartId = $(this).data('id');
-      const priceText = $(`.cart-item[data-id="${cartId}"]`).find('.cart-item-price').text();
+      const cartItem = $(`.cart-item[data-id="${cartId}"]`);
+      const quantity = parseInt(cartItem.find('.qty').text());
+      const priceText = cartItem.find('.cart-item-price').text();
       const price = parseFloat(priceText.replace(/[₱,]/g, ''));
+      
       if (!isNaN(price)) {
         selectedTotal += price;
         selectedCount++;
       }
     });
 
-    // Update the total display with selected items total
     if (selectedCount > 0) {
       const formattedTotal = formatPrice(selectedTotal);
       $('.cart-footer span:last-child').text(`₱${formattedTotal} (${selectedCount} selected)`);
       $('.btn-checkout').prop('disabled', false);
+      $('#deleteSelectedBtn').prop('disabled', false);
     } else {
-      // Show original total if nothing selected
-      const originalTotal = parseFloat($('.cart-footer span:last-child').data('original-total') || 0);
-      const formattedOriginal = formatPrice(originalTotal);
-      $('.cart-footer span:last-child').text(`₱${formattedOriginal}`);
+      $('.cart-footer span:last-child').text('₱0.00');
       $('.btn-checkout').prop('disabled', true);
+      $('#deleteSelectedBtn').prop('disabled', true);
     }
   }
 
-  // Select All functionality
-  $('#selectAllItems').on('change', function() {
-    const isChecked = $(this).prop('checked');
-    $('.item-checkbox').prop('checked', isChecked);
-    updateDeleteButtonState();
-    updateSelectedTotal();
-  });
+  // Bind checkbox events
+  function bindCheckboxEvents() {
+    // Select All functionality
+    $('#selectAllItems').off('change').on('change', function() {
+      const isChecked = $(this).prop('checked');
+      $('.item-checkbox').prop('checked', isChecked);
+      updateSelectedTotal();
+    });
 
-  // Individual checkbox change
-  $(document).on('change', '.item-checkbox', function() {
-    updateDeleteButtonState();
-    updateSelectedTotal();
-    
-    // Update select all checkbox
-    const totalCheckboxes = $('.item-checkbox').length;
-    const checkedCheckboxes = $('.item-checkbox:checked').length;
-    $('#selectAllItems').prop('checked', totalCheckboxes === checkedCheckboxes);
-  });
-
-  // Update delete button state
-  function updateDeleteButtonState() {
-    const hasSelectedItems = $('.item-checkbox:checked').length > 0;
-    $('#deleteSelectedBtn').prop('disabled', !hasSelectedItems);
+    // Individual checkbox change
+    $(document).off('change', '.item-checkbox').on('change', '.item-checkbox', function() {
+      const totalCheckboxes = $('.item-checkbox').length;
+      const checkedCheckboxes = $('.item-checkbox:checked').length;
+      $('#selectAllItems').prop('checked', totalCheckboxes === checkedCheckboxes);
+      updateSelectedTotal();
+    });
   }
+
+  // Cart icon click handler
+  $('#cartIcon').off('click').on('click', function () {
+    $('#cartSidebar, #cartOverlay').addClass('active');
+    $('body').addClass('cart-open');
+    
+    // Initialize cart state when opened
+    initializeCart();
+    bindCheckboxEvents();
+  });
+
+  // Cart close handlers
+  $('#cartCloseBtn, #cartOverlay').off('click').on('click', function () {
+    $('#cartSidebar, #cartOverlay').removeClass('active');
+    $('body').removeClass('cart-open');
+  });
+
+  // Escape key handler
+  $(document).off('keydown').on('keydown', function (e) {
+    if (e.key === 'Escape') {
+      $('#cartSidebar, #cartOverlay').removeClass('active');
+      $('body').removeClass('cart-open');
+    }
+  });
 
   // Checkout button click handler
   $(document).on('click', '.btn-checkout', function(e) {
@@ -294,7 +313,7 @@ $(document).ready(function () {
     }, 'json');
   });
 
-  // Use event delegation for quantity buttons
+  // Quantity buttons handler
   $(document).on('click', '.qty-btn', function () {
     const cartId = $(this).data('id');
     const type = $(this).hasClass('plus') ? 'increase' : 'decrease';
@@ -322,14 +341,15 @@ $(document).ready(function () {
           
           $qtyElem.text(data.new_quantity);
           
-          // Clean and format item price
+          // Update item price
           const cleanItemTotal = parseFloat(String(data.item_total).replace(/[₱,]/g, ''));
           $cartItem.find('.cart-item-price').text(`₱${formatPrice(cleanItemTotal)}`);
           
-          // Update cart summary with clean total
-          const cleanCartTotal = parseFloat(String(data.cart_total_price).replace(/[₱,]/g, ''));
-          updateCartSummary(data.cart_total_quantity, cleanCartTotal);
+          // Update cart count
           $('#cartCount').text(data.cart_total_quantity);
+          
+          // Trigger cart update event
+          $(document).trigger('cartUpdated');
         } else {
           $.toast({
             heading: 'Error',
@@ -344,7 +364,7 @@ $(document).ready(function () {
     });
   });
 
-  // Use event delegation for delete buttons
+  // Delete single item handler
   $(document).on('click', '.delete-item-btn', function () {
     const cartId = $(this).data('id');
 
@@ -364,26 +384,28 @@ $(document).ready(function () {
             stack: false
           });
           $(`.cart-item[data-id="${cartId}"]`).remove();
-          updateCartSummary(data.cart_total_quantity, data.cart_total_price);
-          $('#cartCount').text(data.cart_total_quantity); 
+          $('#cartCount').text(data.cart_total_quantity);
+          
           if ($('.cart-item').length === 0) {
             $('.cart-items').html('<p>Your cart is empty.</p>');
-            // Update cart actions to be empty
             $('.cart-actions').empty();
           }
+          
+          // Trigger cart update event
+          $(document).trigger('cartUpdated');
         }
       }
     });
   });
 
-  // Delete selected items
+  // Delete selected items button handler
   $('#deleteSelectedBtn').on('click', function() {
     if ($('.item-checkbox:checked').length > 0) {
       $('#clearCartModal').css('display', 'flex');
     }
   });
 
-  // Cancel delete
+  // Cancel delete modal
   $('#cancelClearCart').on('click', function() {
     $('#clearCartModal').css('display', 'none');
   });
@@ -407,7 +429,6 @@ $(document).ready(function () {
             $(`.cart-item[data-id="${cartId}"]`).remove();
           });
           
-          updateCartSummary(data.cart_total_quantity, data.cart_total_price);
           $('#cartCount').text(data.cart_total_quantity);
           
           $.toast({
@@ -422,10 +443,13 @@ $(document).ready(function () {
           // Hide modal
           $('#clearCartModal').css('display', 'none');
           
-          // If cart is empty, refresh the page
           if (data.cart_total_quantity === 0) {
-            location.reload();
+            $('.cart-items').html('<p>Your cart is empty.</p>');
+            $('.cart-actions').empty();
           }
+          
+          // Trigger cart update event
+          $(document).trigger('cartUpdated');
         } else {
           $.toast({
             heading: 'Error',
@@ -440,32 +464,6 @@ $(document).ready(function () {
     });
   });
 
-  // Format all prices on page load
-  function formatAllPrices() {
-    // Format individual item prices
-    $('.cart-item-price').each(function() {
-      const priceText = $(this).text();
-      const cleanPrice = parseFloat(priceText.replace(/[₱,]/g, ''));
-      if (!isNaN(cleanPrice)) {
-        $(this).text(`₱${formatPrice(cleanPrice)}`);
-      }
-    });
-
-    // Format total price
-    const totalPriceElement = $('.cart-footer span:last-child');
-    const totalPriceText = totalPriceElement.text();
-    const cleanTotalPrice = parseFloat(totalPriceText.replace(/[₱,]/g, ''));
-    if (!isNaN(cleanTotalPrice)) {
-      totalPriceElement.text(`₱${formatPrice(cleanTotalPrice)}`);
-    }
-  }
-
-  // Call formatAllPrices on page load
-  formatAllPrices();
-
-  // Bind formatAllPrices to cart updates
-  $(document).on('cartUpdated', formatAllPrices);
-
   // Close modal when clicking outside
   $(document).on('click', '.md-modal-overlay', function(e) {
     if (e.target === this) {
@@ -473,30 +471,31 @@ $(document).ready(function () {
     }
   });
 
-  $('#cartIcon').on('click', function () {
-    $('#cartSidebar, #cartOverlay').addClass('active');
-    $('body').addClass('cart-open');
+  // Initialize cart immediately when page loads
+  initializeCart();
+  bindCheckboxEvents();
+
+  // Reinitialize cart when cart is updated
+  $(document).on('cartUpdated', function() {
+    initializeCart();
+    bindCheckboxEvents();
   });
 
-  $('#cartCloseBtn, #cartOverlay').on('click', function () {
-    $('#cartSidebar, #cartOverlay').removeClass('active');
-    $('body').removeClass('cart-open');
+  // Also initialize when cart sidebar becomes visible
+  const observer = new MutationObserver(function(mutations) {
+    mutations.forEach(function(mutation) {
+      if (mutation.target.classList.contains('active')) {
+        initializeCart();
+        bindCheckboxEvents();
+      }
+    });
   });
 
-  $(document).on('keydown', function (e) {
-    if (e.key === 'Escape') {
-      $('#cartSidebar, #cartOverlay').removeClass('active');
-      $('body').removeClass('cart-open');
-    }
+  // Start observing the cart sidebar for class changes
+  observer.observe(document.getElementById('cartSidebar'), {
+    attributes: true,
+    attributeFilter: ['class']
   });
-
-  // Store original total on page load
-  const originalTotal = parseFloat($('.cart-footer span:last-child').text().replace(/[₱,]/g, ''));
-  $('.cart-footer span:last-child').data('original-total', originalTotal);
-
-  // Initialize button states and totals
-  updateSelectedTotal();
-  updateDeleteButtonState();
 });
 </script>
 
