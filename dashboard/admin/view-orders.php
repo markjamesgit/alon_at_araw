@@ -222,6 +222,7 @@ $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                     onchange="if(handlePaymentStatusChange(this, <?= $order['order_id'] ?>)) this.form.submit()" 
                                                     class="status-select payment-<?= $order['payment_status'] ?>"
                                                     data-payment-status="<?= $order['order_id'] ?>"
+                                                    data-current-payment-status="<?= $order['payment_status'] ?>"
                                                     value="<?= $order['payment_status'] ?>">
                                                 <option value="pending" <?= $order['payment_status'] === 'pending' ? 'selected' : '' ?>>Pending</option>
                                                 <option value="paid" <?= $order['payment_status'] === 'paid' ? 'selected' : '' ?>>Paid</option>
@@ -237,6 +238,7 @@ $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                     onchange="if(handleOrderStatusChange(this, <?= $order['order_id'] ?>)) this.form.submit()" 
                                                     class="status-select status-<?= $order['order_status'] ?>"
                                                     data-order-id="<?= $order['order_id'] ?>"
+                                                    data-current-status="<?= $order['order_status'] ?>"
                                                     value="<?= $order['order_status'] ?>">
                                                 <option value="pending" <?= $order['order_status'] === 'pending' ? 'selected' : '' ?>>Pending</option>
                                                 <option value="preparing" <?= $order['order_status'] === 'preparing' ? 'selected' : '' ?>>Preparing</option>
@@ -385,34 +387,77 @@ window.onclick = function(event) {
 function getValidOrderStatuses(paymentStatus) {
     switch(paymentStatus) {
         case 'pending':
-            return ['pending'];
+            return ['pending', 'cancelled']; // Allow cancellation even when pending
         case 'paid':
-            return ['preparing', 'ready_for_pickup', 'completed'];
+            return ['preparing', 'ready_for_pickup', 'completed', 'cancelled']; // Allow all statuses when paid
         case 'failed':
-            return ['cancelled'];
+            return ['cancelled']; // Only allow cancellation when failed
         default:
             return ['pending', 'preparing', 'ready_for_pickup', 'completed', 'cancelled'];
     }
 }
 
-// Function to update order status options in the table
-function updateTableOrderStatus(row, paymentStatus) {
-    const orderStatusSelect = row.find('select[name="new_status"]');
+// Function to handle order status changes
+function handleOrderStatusChange(selectElement, orderId) {
+    const paymentStatus = document.querySelector(`[data-payment-status="${orderId}"]`).value;
     const validStatuses = getValidOrderStatuses(paymentStatus);
+    const currentStatus = selectElement.getAttribute('data-current-status');
     
-    // Hide all options first
-    orderStatusSelect.find('option').each(function() {
-        if (!validStatuses.includes($(this).val())) {
-            $(this).hide();
-        } else {
-            $(this).show();
+    // Allow status change if it's valid for the current payment status
+    if (validStatuses.includes(selectElement.value)) {
+        // Special case: Don't allow changing from completed/cancelled to other statuses
+        if ((currentStatus === 'completed' || currentStatus === 'cancelled') && 
+            selectElement.value !== currentStatus) {
+            $.toast({
+                heading: 'Invalid Status Change',
+                text: 'Cannot change status of completed or cancelled orders.',
+                icon: 'error',
+                position: 'top-right'
+            });
+            selectElement.value = currentStatus;
+            return false;
         }
-    });
-
-    // If current value is not valid, set to first valid status
-    if (!validStatuses.includes(orderStatusSelect.val())) {
-        orderStatusSelect.val(validStatuses[0]);
+        return true;
     }
+    
+    $.toast({
+        heading: 'Invalid Status Change',
+        text: 'This order status is not valid for the current payment status.',
+        icon: 'error',
+        position: 'top-right'
+    });
+    selectElement.value = currentStatus;
+    return false;
+}
+
+// Function to handle payment status changes
+function handlePaymentStatusChange(selectElement, orderId) {
+    const newPaymentStatus = selectElement.value;
+    const orderStatusSelect = document.querySelector(`[data-order-id="${orderId}"]`);
+    const currentOrderStatus = orderStatusSelect.value;
+    const currentPaymentStatus = selectElement.getAttribute('data-current-payment-status');
+    
+    // Don't allow changing payment status if order is completed or cancelled
+    if (currentOrderStatus === 'completed' || currentOrderStatus === 'cancelled') {
+        $.toast({
+            heading: 'Invalid Status Change',
+            text: 'Cannot change payment status of completed or cancelled orders.',
+            icon: 'error',
+            position: 'top-right'
+        });
+        selectElement.value = currentPaymentStatus;
+        return false;
+    }
+    
+    // Update available order statuses based on new payment status
+    const validStatuses = getValidOrderStatuses(newPaymentStatus);
+    
+    // If current order status is not valid for new payment status, set to first valid status
+    if (!validStatuses.includes(currentOrderStatus)) {
+        orderStatusSelect.value = validStatuses[0];
+    }
+    
+    return true;
 }
 
 // Function to apply filters and search
@@ -442,20 +487,20 @@ function applyFilters() {
 
         const matchesPaymentMethod = !paymentMethod || rowPaymentMethod === paymentMethod;
         const matchesPaymentStatus = !paymentStatus || rowPaymentStatus === paymentStatus;
+        
+        // Check if order status is valid for the current payment status
         let matchesOrderStatus = true;
         if (orderStatus) {
-            // Check if the order status is valid for the current payment status
             const validStatuses = getValidOrderStatuses(rowPaymentStatus);
             matchesOrderStatus = validStatuses.includes(orderStatus) && rowOrderStatus === orderStatus;
         }
+        
         const matchesDeliveryMethod = !deliveryMethod || rowDeliveryMethod === deliveryMethod;
 
         if (matchesSearch && matchesPaymentMethod && matchesPaymentStatus && 
             matchesOrderStatus && matchesDeliveryMethod) {
             row.show();
             hasVisibleRows = true;
-            // Update the order status options based on the row's payment status
-            updateTableOrderStatus(row, rowPaymentStatus);
         } else {
             row.hide();
         }
@@ -469,7 +514,8 @@ function applyFilters() {
 
     // Update order status filter options based on payment status filter
     const orderStatusFilter = $('#orderStatusFilter');
-    const validFilterStatuses = getValidOrderStatuses(paymentStatus);
+    const validFilterStatuses = paymentStatus ? getValidOrderStatuses(paymentStatus) : 
+        ['pending', 'preparing', 'ready_for_pickup', 'completed', 'cancelled'];
     
     orderStatusFilter.find('option').each(function() {
         const option = $(this);
@@ -483,7 +529,7 @@ function applyFilters() {
     });
 
     // Reset order status filter if current value is not valid
-    if (paymentStatus && !validFilterStatuses.includes(orderStatusFilter.val())) {
+    if (orderStatus && !validFilterStatuses.includes(orderStatusFilter.val())) {
         orderStatusFilter.val('');
     }
 }
@@ -505,33 +551,24 @@ $(document).on('change', 'select[name="new_payment_status"]', function() {
     updateTableOrderStatus(row, $(this).val());
 });
 
-// Function to handle order status changes
-function handleOrderStatusChange(selectElement, orderId) {
-    const paymentStatus = document.querySelector(`[data-payment-status="${orderId}"]`).value;
+// Function to update order status options in the table
+function updateTableOrderStatus(row, paymentStatus) {
+    const orderStatusSelect = row.find('select[name="new_status"]');
     const validStatuses = getValidOrderStatuses(paymentStatus);
     
-    if (!validStatuses.includes(selectElement.value)) {
-        $.toast({
-            heading: 'Invalid Status Change',
-            text: 'Order status cannot be changed. Please update payment status first.',
-            icon: 'error',
-            position: 'top-right'
-        });
-        selectElement.value = validStatuses[0];
-        return false;
-    }
-    return true;
-}
+    // Hide all options first
+    orderStatusSelect.find('option').each(function() {
+        if (!validStatuses.includes($(this).val())) {
+            $(this).hide();
+        } else {
+            $(this).show();
+        }
+    });
 
-// Function to handle payment status changes
-function handlePaymentStatusChange(selectElement, orderId) {
-    const newPaymentStatus = selectElement.value;
-    const orderStatusSelect = document.querySelector(`[data-order-id="${orderId}"]`);
-    
-    // Update available order statuses
-    updateOrderStatusOptions(newPaymentStatus);
-    
-    return true;
+    // If current value is not valid, set to first valid status
+    if (!validStatuses.includes(orderStatusSelect.val())) {
+        orderStatusSelect.val(validStatuses[0]);
+    }
 }
 
 // Initialize order status options on page load
