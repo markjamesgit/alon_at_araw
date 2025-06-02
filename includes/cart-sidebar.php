@@ -177,6 +177,10 @@ $(document).ready(function () {
     
     // Ensure all checkboxes are unchecked initially
     $('.item-checkbox, #selectAllItems').prop('checked', false);
+    
+    // Update cart header with total items count
+    const totalItems = $('.cart-item').length;
+    updateCartHeader(totalItems);
   }
 
   // Format price function
@@ -188,6 +192,11 @@ $(document).ready(function () {
       number = 0;
     }
     return number.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  }
+
+  function updateCartHeader(selectedCount) {
+    // Update the cart header text with selected count
+    $('.cart-header h2').text(`Your Cart (${selectedCount})`);
   }
 
   function updateSelectedTotal() {
@@ -206,6 +215,9 @@ $(document).ready(function () {
         selectedCount++;
       }
     });
+
+    // Update cart header with selected count
+    updateCartHeader(selectedCount);
 
     if (selectedCount > 0) {
       const formattedTotal = formatPrice(selectedTotal);
@@ -348,6 +360,11 @@ $(document).ready(function () {
           // Update cart count
           $('#cartCount').text(data.cart_total_quantity);
           
+          // Update cart header if item is selected
+          if ($cartItem.find('.item-checkbox').prop('checked')) {
+            updateSelectedTotal();
+          }
+          
           // Trigger cart update event
           $(document).trigger('cartUpdated');
         } else {
@@ -367,6 +384,8 @@ $(document).ready(function () {
   // Delete single item handler
   $(document).on('click', '.delete-item-btn', function () {
     const cartId = $(this).data('id');
+    const $cartItem = $(`.cart-item[data-id="${cartId}"]`);
+    const wasSelected = $cartItem.find('.item-checkbox').prop('checked');
 
     $.ajax({
       url: '/alon_at_araw/dashboard/customer/cart/delete-cart-item.php',
@@ -383,12 +402,15 @@ $(document).ready(function () {
             hideAfter: 2000,
             stack: false
           });
-          $(`.cart-item[data-id="${cartId}"]`).remove();
+          $cartItem.remove();
           $('#cartCount').text(data.cart_total_quantity);
           
           if ($('.cart-item').length === 0) {
             $('.cart-items').html('<p>Your cart is empty.</p>');
             $('.cart-actions').empty();
+            updateCartHeader(0);
+          } else if (wasSelected) {
+            updateSelectedTotal();
           }
           
           // Trigger cart update event
@@ -446,6 +468,7 @@ $(document).ready(function () {
           if (data.cart_total_quantity === 0) {
             $('.cart-items').html('<p>Your cart is empty.</p>');
             $('.cart-actions').empty();
+            updateCartHeader(0);
           }
           
           // Trigger cart update event
