@@ -8,53 +8,25 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-// Handle order cancellation
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cancel_order'])) {
-    $order_id = $_POST['order_id'];
-    
-    // Verify order belongs to user and is in a cancellable state
-    $check_stmt = $conn->prepare("SELECT order_status, payment_status FROM orders WHERE order_id = ? AND user_id = ?");
-    $check_stmt->execute([$order_id, $_SESSION['user_id']]);
-    $order_info = $check_stmt->fetch(PDO::FETCH_ASSOC);
-    
-    if ($order_info && $order_info['payment_status'] === 'pending' && $order_info['order_status'] === 'pending') {
-        $update_stmt = $conn->prepare("UPDATE orders SET order_status = 'cancelled' WHERE order_id = ?");
-        if ($update_stmt->execute([$order_id])) {
-            $_SESSION['toast'] = 'order_cancelled';
-        } else {
-            $_SESSION['toast'] = 'cancel_error';
-        }
-    } else {
-        $_SESSION['toast'] = 'cancel_invalid';
-    }
-    
-    header("Location: /alon_at_araw/dashboard/customer/my-purchases.php");
-    exit;
-}
-
-// Fetch user's orders with pagination
+// Fetch user's completed orders with pagination
 $entries_per_page = isset($_GET['entries']) ? (int)$_GET['entries'] : 10;
 $current_page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $offset = ($current_page - 1) * $entries_per_page;
 
-// Get total number of active orders (excluding paid and completed)
-$total_records = $conn->prepare("
-    SELECT COUNT(*) 
-    FROM orders 
-    WHERE user_id = ? 
-    AND NOT (payment_status = 'paid' AND order_status = 'completed')
-");
+// Get total number of completed orders
+$total_records = $conn->prepare("SELECT COUNT(*) FROM orders WHERE user_id = ? AND payment_status = 'paid' AND order_status = 'completed'");
 $total_records->execute([$_SESSION['user_id']]);
 $total_records = $total_records->fetchColumn();
 $total_pages = ceil($total_records / $entries_per_page);
 
-// Fetch active orders (excluding paid and completed)
+// Fetch completed orders
 $stmt = $conn->prepare("
     SELECT o.*, 
            (SELECT COUNT(*) FROM order_items WHERE order_id = o.order_id) as item_count
     FROM orders o 
     WHERE o.user_id = ? 
-    AND NOT (o.payment_status = 'paid' AND o.order_status = 'completed')
+    AND o.payment_status = 'paid' 
+    AND o.order_status = 'completed'
     ORDER BY o.created_at DESC
     LIMIT ?, ?
 ");
@@ -70,40 +42,248 @@ $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Purchases | Alon at Araw</title>
+    <title>Order History | Alon at Araw</title>
     <link rel="stylesheet" href="/alon_at_araw/assets/global.css">
     <link rel="stylesheet" href="/alon_at_araw/assets/styles/root-customer.css">
     <link rel="stylesheet" href="/alon_at_araw/assets/styles/my-purchases.css">
     <link rel="stylesheet" href="/alon_at_araw/assets/fonts/font.css">
     <link rel="icon" type="image/png" href="../../assets/images/logo/logo.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-toast-plugin/1.3.2/jquery.toast.min.css" />
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-toast-plugin/1.3.2/jquery.toast.min.js"></script>
+    <style>
+        /* Additional styles specific to order history */
+        .order-history-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .order-history-header h1 {
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+        }
+
+        .order-history-header .subtitle {
+            color: #7f8c8d;
+            font-size: 1.1rem;
+        }
+
+        .completed-badge {
+            background-color: #28a745;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .completed-badge i {
+            font-size: 0.8rem;
+        }
+
+        .order-date {
+            color: #666;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .order-date i {
+            color: #95a5a6;
+        }
+
+        .no-orders {
+            text-align: center;
+            padding: 3rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin: 2rem 0;
+        }
+
+        .no-orders i {
+            font-size: 3rem;
+            color: #95a5a6;
+            margin-bottom: 1rem;
+        }
+
+        .no-orders h2 {
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+        }
+
+        .no-orders p {
+            color: #7f8c8d;
+            margin-bottom: 1.5rem;
+        }
+
+        .shop-now-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background-color: #007bff;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            text-decoration: none;
+            transition: background-color 0.2s;
+        }
+
+        .shop-now-btn:hover {
+            background-color: #0056b3;
+        }
+
+        .order-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .order-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #eee;
+        }
+
+        .order-info h3 {
+            color: #2c3e50;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .order-info h3 i {
+            color: #3498db;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.75rem;
+            padding: 0.5rem 0;
+        }
+
+        .detail-row:not(:last-child) {
+            border-bottom: 1px solid #f8f9fa;
+        }
+
+        .label {
+            color: #7f8c8d;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .label i {
+            color: #95a5a6;
+            width: 20px;
+            text-align: center;
+        }
+
+        .value {
+            color: #2c3e50;
+            font-weight: 500;
+        }
+
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .status-badge.payment-paid {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .view-details-btn {
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: background-color 0.2s;
+        }
+
+        .view-details-btn:hover {
+            background-color: #0056b3;
+        }
+
+        .pagination-container {
+            margin-top: 2rem;
+            display: flex;
+            justify-content: center;
+        }
+
+        .pagination {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .page-link {
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            background: white;
+            color: #2c3e50;
+            text-decoration: none;
+            transition: all 0.2s;
+            border: 1px solid #dee2e6;
+        }
+
+        .page-link:hover {
+            background: #f8f9fa;
+            border-color: #007bff;
+            color: #007bff;
+        }
+
+        .page-link.active {
+            background: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+
+        .page-ellipsis {
+            color: #6c757d;
+            padding: 0 0.5rem;
+        }
+    </style>
 </head>
 <body>
     <?php include '../../includes/customer-header.php'; ?>
 
     <main class="purchases-page">
         <div class="purchases-container">
-            <h1>My Purchases</h1>
-            <p class="subtitle">View your order history and track your orders</p>
+            <div class="order-history-header">
+                <h1>Order History</h1>
+                <p class="subtitle">View your completed orders and past purchases</p>
+            </div>
 
             <?php if (empty($orders)): ?>
                 <div class="no-orders">
-                    <i class="fas fa-shopping-cart"></i>
-                    <h2>No active orders</h2>
-                    <p>Your active orders will appear here. Completed orders can be found in Order History.</p>
-                    <div class="action-buttons">
-                        <a href="menus.php" class="shop-now-btn">
-                            <i class="fas fa-shopping-bag"></i>
-                            Shop Now
-                        </a>
-                        <a href="order-history.php" class="view-history-btn">
-                            <i class="fas fa-history"></i>
-                            View Order History
-                        </a>
-                    </div>
+                    <i class="fas fa-history"></i>
+                    <h2>No completed orders yet</h2>
+                    <p>Your completed orders will appear here</p>
+                    <a href="menus.php" class="shop-now-btn">
+                        <i class="fas fa-shopping-bag"></i>
+                        Browse Menu
+                    </a>
                 </div>
             <?php else: ?>
                 <div class="orders-grid">
@@ -120,8 +300,9 @@ $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                         <?= date('M d, Y h:i A', strtotime($order['created_at'])) ?>
                                     </p>
                                 </div>
-                                <div class="order-status status-<?= $order['order_status'] ?>">
-                                    <?= ucfirst(str_replace('_', ' ', $order['order_status'])) ?>
+                                <div class="completed-badge">
+                                    <i class="fas fa-check-circle"></i>
+                                    Completed
                                 </div>
                             </div>
 
@@ -149,15 +330,6 @@ $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 </div>
                                 <div class="detail-row">
                                     <span class="label">
-                                        <i class="fas fa-money-check-alt"></i>
-                                        Payment Status
-                                    </span>
-                                    <span class="value status-badge payment-<?= $order['payment_status'] ?>">
-                                        <?= ucfirst($order['payment_status']) ?>
-                                    </span>
-                                </div>
-                                <div class="detail-row">
-                                    <span class="label">
                                         <i class="fas fa-truck"></i>
                                         Delivery Method
                                     </span>
@@ -179,16 +351,6 @@ $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                     <i class="fas fa-eye"></i>
                                     View Details
                                 </a>
-                                <?php if ($order['payment_status'] === 'pending' && $order['order_status'] === 'pending'): ?>
-                                    <form method="POST" class="cancel-order-form" onsubmit="return confirmCancel(event)">
-                                        <input type="hidden" name="order_id" value="<?= $order['order_id'] ?>">
-                                        <input type="hidden" name="cancel_order" value="1">
-                                        <button type="submit" class="cancel-order-btn">
-                                            <i class="fas fa-times-circle"></i>
-                                            Cancel Order
-                                        </button>
-                                    </form>
-                                <?php endif; ?>
                             </div>
                         </div>
                     <?php endforeach; ?>
@@ -239,149 +401,5 @@ $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <?php endif; ?>
         </div>
     </main>
-
-    <script>
-    function confirmCancel(event) {
-        event.preventDefault();
-        if (confirm('Are you sure you want to cancel this order? This action cannot be undone.')) {
-            event.target.submit();
-        }
-        return false;
-    }
-
-    // Show toast messages
-    <?php if (isset($_SESSION['toast'])): ?>
-        $.toast({
-            heading: <?php 
-                switch ($_SESSION['toast']) {
-                    case 'order_cancelled':
-                        echo "'Order Cancelled'";
-                        break;
-                    case 'cancel_error':
-                        echo "'Error'";
-                        break;
-                    case 'cancel_invalid':
-                        echo "'Invalid Action'";
-                        break;
-                    default:
-                        echo "'Notification'";
-                }
-            ?>,
-            text: <?php 
-                switch ($_SESSION['toast']) {
-                    case 'order_cancelled':
-                        echo "'Your order has been cancelled successfully.'";
-                        break;
-                    case 'cancel_error':
-                        echo "'Failed to cancel order. Please try again.'";
-                        break;
-                    case 'cancel_invalid':
-                        echo "'This order cannot be cancelled. Only pending orders can be cancelled.'";
-                        break;
-                    default:
-                        echo "'Operation completed.'";
-                }
-            ?>,
-            showHideTransition: 'slide',
-            icon: <?php 
-                echo ($_SESSION['toast'] === 'order_cancelled') ? "'success'" : "'error'";
-            ?>,
-            position: 'top-right'
-        });
-        <?php unset($_SESSION['toast']); ?>
-    <?php endif; ?>
-    </script>
-
-    <style>
-    /* Add these styles to your existing CSS */
-    .order-actions {
-        display: flex;
-        gap: 1rem;
-        justify-content: flex-end;
-        margin-top: 1rem;
-        padding-top: 1rem;
-        border-top: 1px solid #eee;
-    }
-
-    .cancel-order-form {
-        margin: 0;
-    }
-
-    .cancel-order-btn {
-        background-color: #dc3545;
-        color: white;
-        border: none;
-        padding: 0.5rem 1rem;
-        border-radius: 4px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        font-size: 0.9rem;
-        transition: background-color 0.2s;
-    }
-
-    .cancel-order-btn:hover {
-        background-color: #c82333;
-    }
-
-    .cancel-order-btn i {
-        font-size: 1rem;
-    }
-
-    .view-details-btn {
-        background-color: #007bff;
-        color: white;
-        text-decoration: none;
-        padding: 0.5rem 1rem;
-        border-radius: 4px;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        font-size: 0.9rem;
-        transition: background-color 0.2s;
-    }
-
-    .view-details-btn:hover {
-        background-color: #0056b3;
-    }
-
-    .view-details-btn i {
-        font-size: 1rem;
-    }
-
-    .action-buttons {
-        display: flex;
-        gap: 1rem;
-        justify-content: center;
-        margin-top: 1.5rem;
-    }
-
-    .view-history-btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        background-color: #6c757d;
-        color: white;
-        padding: 0.75rem 1.5rem;
-        border-radius: 4px;
-        text-decoration: none;
-        transition: background-color 0.2s;
-    }
-
-    .view-history-btn:hover {
-        background-color: #5a6268;
-    }
-
-    .view-history-btn i {
-        font-size: 1rem;
-    }
-
-    .no-orders p {
-        max-width: 400px;
-        margin: 0 auto 1.5rem;
-        line-height: 1.5;
-    }
-    </style>
 </body>
 </html> 
