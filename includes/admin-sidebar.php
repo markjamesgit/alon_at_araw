@@ -66,12 +66,9 @@ $profileImagePath = $cleanPath
       <li><a href="dashboard.php" class="<?= $currentPage === 'dashboard.php' ? 'active' : '' ?>"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
       <li><a href="manage-users.php" class="<?= $currentPage === 'manage-users.php' ? 'active' : '' ?>"><i class="fas fa-users"></i> Manage Users</a></li>    
       <li><a href="manage-categories.php" class="<?= $currentPage === 'manage-categories.php' ? 'active' : '' ?>"><i class="fas fa-tags"></i> Manage Categories</a></li>
-      <li><a href="manage-products.php" class="<?= $currentPage === 'manage-products.php' ? 'active' : '' ?>"><i class="fas fa-box-open"></i> Manage Products</a></li>  
-      <li><a href="inventory.php" class="<?= $currentPage === 'inventory.php' ? 'active' : '' ?>"><i class="fas fa-cubes"></i> Manage Inventory</a></li>      
-      <li><a href="custom-drinks.php" class="<?= $currentPage === 'custom-drinks.php' ? 'active' : '' ?>"><i class="fas fa-mug-hot"></i> Custom Drinks</a></li>
+      <li><a href="manage-products.php" class="<?= $currentPage === 'manage-products.php' ? 'active' : '' ?>"><i class="fas fa-box-open"></i> Manage Inventory</a></li>     
       <li><a href="view-orders.php" class="<?= $currentPage === 'view-orders.php' ? 'active' : '' ?>"><i class="fas fa-shopping-cart"></i> View Orders</a></li>     
-      <li><a href="pos.php" class="<?= $currentPage === 'pos.php' ? 'active' : '' ?>"><i class="fas fa-cash-register"></i> POS / Queue</a></li>    
-      <li><a href="reports.php" class="<?= $currentPage === 'reports.php' ? 'active' : '' ?>"><i class="fas fa-chart-line"></i> Reports</a></li>      
+      <li><a href="pos.php" class="<?= $currentPage === 'pos.php' ? 'active' : '' ?>"><i class="fas fa-cash-register"></i> POS / Queue</a></li>          
       <li><a href="customize-site.php" class="<?= $currentPage === 'customize-site.php' ? 'active' : '' ?>"><i class="fas fa-paint-brush"></i> Page Customization</a></li>         
       <li><a href="/alon_at_araw/auth/logout.php" class="logout"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
     </ul>
